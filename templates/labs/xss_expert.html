@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Lab: XSS Expert - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='xss', level='expert') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                USER PROFILE & WELCOME
+            </span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse tracking-wider">TARGET LIVE</span>
+        </div>
+
+        <div class="p-8 sm:p-12 max-w-2xl mx-auto text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Profil Pengguna</h2>
+            
+            <!-- Simulasi Input -->
+            <form method="GET" class="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
+                <input type="text" name="name" value="{{ name }}" class="px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition w-64" placeholder="Siapa nama Anda?">
+                <button type="submit" class="bg-brand-blue hover:bg-blue-600 text-white font-bold py-2.5 px-6 rounded-md transition shadow-md shadow-blue-500/30">
+                    Perbarui Profil
+                </button>
+            </form>
+
+            <!-- Area Rentan (VULNERABLE: Berada di dalam atribut HTML atau Tag Script) -->
+            <div class="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg inline-block text-left w-full">
+                <p class="text-navy-900 font-semibold mb-2">Pesan Sistem:</p>
+                
+                {% if name %}
+                <!-- 
+                   Simulasi kerentanan di mana input masuk ke dalam atribut
+                   atau tag script. Contoh penggunaan {{ name | safe }} 
+                -->
+                <div class="text-gray-700" id="welcome-message">
+                    Selamat datang kembali, <span class="font-bold text-brand-blue" data-user="{{ name | safe }}">{{ name | safe }}</span>!
+                </div>
+                
+                <script>
+                    // Simulasi DOM XSS tracking atau analytics
+                    var userName = '{{ name | safe }}';
+                    console.log("User logged in: " + userName);
+                </script>
+                {% else %}
+                <div class="text-gray-700">Silakan masukkan nama Anda untuk memuat profil.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="bg-gray-50 border-t border-gray-100 p-4 text-center">
+            <code class="text-xs text-gray-500 font-mono">
+                [GET] /lab/xss/expert/welcome?name=... | Refleksi terjadi di dalam konteks JavaScript/Atribut
+            </code>
+        </div>
+    </div>
+</div>
+{% endblock %}

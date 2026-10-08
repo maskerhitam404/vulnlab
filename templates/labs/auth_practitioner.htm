@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Lab: Auth Practitioner - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-16">
+    <a href="{{ url_for('tutorial', slug='authentication', level='practitioner') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 font-mono text-sm flex justify-between">
+            <span>LOGIN PORTAL (IP FILTERED)</span>
+            <span class="text-green-400">TARGET</span>
+        </div>
+        
+        <div class="p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Masuk ke Akun</h2>
+            
+            {% if error_msg %}
+            <div class="mb-4 bg-red-50 border-l-4 border-red-500 p-3 text-sm text-red-700 font-medium">{{ error_msg }}</div>
+            {% endif %}
+            
+            {% if success_msg %}
+            <div class="mb-4 bg-green-50 border-l-4 border-green-500 p-3 text-sm text-green-700 font-medium">{{ success_msg }}</div>
+            {% else %}
+            <form method="POST" action="/lab/authentication/practitioner/login">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                    <input type="text" name="username" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <input type="password" name="password" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-blue" required>
+                </div>
+                <button type="submit" class="w-full bg-brand-blue hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md transition shadow">Login</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

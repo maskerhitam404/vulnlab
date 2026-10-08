@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Lab: SSTI Apprentice - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='ssti', level='apprentice') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span>USER PROFILE RENDERER</span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">TARGET LIVE</span>
+        </div>
+
+        <div class="p-8 sm:p-12 max-w-2xl mx-auto text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Halo, <span class="text-brand-blue font-mono border-b-2 border-dashed">{{ name | safe }}</span>!</h2>
+            <p class="text-gray-500 mb-8">Ini adalah simulasi fitur kustomisasi profil di mana server mengambil nama Anda dari URL dan membangun ulang elemen HTML.</p>
+            
+            <form method="GET" class="flex flex-col sm:flex-row gap-4 mb-6">
+                <input type="text" name="name" value="{{ raw_input }}" class="flex-grow px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-blue outline-none transition font-mono text-sm">
+                <button type="submit" class="bg-brand-blue hover:bg-blue-600 text-white font-bold py-2.5 px-8 rounded-md transition shadow-md w-full sm:w-auto">
+                    Perbarui Nama
+                </button>
+            </form>
+        </div>
+        
+        <div class="bg-gray-50 border-t border-gray-100 p-4 text-center">
+            <code class="text-xs text-gray-500 font-mono">
+                [GET] /lab/ssti/apprentice?name=... | Render Engine: Jinja2
+            </code>
+        </div>
+    </div>
+</div>
+{% endblock %}

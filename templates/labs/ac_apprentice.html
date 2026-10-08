@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Lab: Access Control Apprentice - IFSEC LAB{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='access-control', level='apprentice') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span>USER DASHBOARD</span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">TARGET LIVE</span>
+        </div>
+        <div class="p-8 sm:p-12 text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Selamat Datang, Wiener!</h2>
+            <p class="text-gray-500 mb-8">Anda login sebagai pengguna biasa. Hak akses Anda sangat terbatas.</p>
+            <div class="bg-gray-100 p-6 rounded-md border border-gray-200 text-left">
+                <h3 class="font-bold text-gray-800 mb-2">Aktivitas Terakhir:</h3>
+                <ul class="list-disc pl-5 text-gray-600">
+                    <li>Membaca artikel "Cara Mencegah XSS".</li>
+                    <li>Mengubah foto profil.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

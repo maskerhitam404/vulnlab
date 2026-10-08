@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+	<head>
+		<!-- Meta -->
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1"> 
+		<meta name="description" content="IFSEC Lab Academy - Platform Pembelajaran Keamanan Web Interaktif">
+		<meta name="keywords" content="cybersecurity, hacking, bug bounty, penetration testing, web security, owasp, sql injection, xss, ctf">
+		<meta name="author" content="IFSEC">
+		
+		<!-- SITE TITLE -->
+		<title>IFSEC Lab Academy - Platform Belajar Keamanan Web</title>			
+		
+		<!-- Latest Bootstrap min CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/bootstrap/css/bootstrap.min.css') }}">		
+		<!-- Google Font -->
+		<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+		<!-- Font Awesome CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/webfonts/themify-icons.css') }}">
+		<!-- All Min Css -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/all.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/fontawesome.min.css') }}">
+		<!--- owl carousel Css-->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/owlcarousel/css/owl.carousel.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/owlcarousel/css/owl.theme.css') }}">						
+		<!-- MAGNIFIC CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/magnific-popup.css') }}">
+		<!--jquery-simple-mobilemenu Css-->
+        <link rel="stylesheet" href="{{ url_for('static', filename='assets/css/jquery-simple-mobilemenu.css') }}">			
+		<!-- animate CSS -->
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/animate.css') }}">			
+		<!-- Style CSS -->					
+		<link rel="stylesheet" href="{{ url_for('static', filename='assets/css/style.css') }}">				
+		
+		<!--[if lt IE 9]>
+		  <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+		  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+		<![endif]-->
+</head>
+<body>
+	
+	<!-- START TOP HEADER CLASS -->
+	<div class="top_header_banner">
+		
+		
+		<!-- START NAVBAR -->  
+		<div id="navigation" class="navbar-light bg-faded site-navigation">
+			<div class="container">
+				<div class="row">
+					<div class="col-20 align-self-center">
+						<div class="site-logo">
+							<!-- Pastikan file logo ada di dalam folder static/assets/images/all-img/ -->
+							<a href="/"><img src="{{ url_for('static', filename='assets/images/all-img/logo.png') }}" alt="IFSEC Logo" style="max-height: 50px;"></a>          				
+						</div>
+					</div><!--- END Col -->
+					
+					<div class="col-60 d-flex">
+						<!-- START NAVBAR MENU -->
+                        <nav id="main-menu">
+                            <ul>
+                                <li><a href="/">Beranda</a></li>
+                                <li class="menu-item-has-children"><a href="#">Katalog Modul</a>
+                                    <ul>										
+                                        <li><a href="{{ url_for('category', slug='sql-injection') }}">SQL Injection</a></li>
+                                        <li><a href="{{ url_for('category', slug='xss') }}">Cross-site Scripting</a></li>
+                                        <li><a href="{{ url_for('category', slug='csrf') }}">CSRF</a></li>
+                                        <li><a href="{{ url_for('category', slug='ssrf') }}">SSRF</a></li>
+                                        <li><a href="{{ url_for('category', slug='access-control') }}">Access Control</a></li>
+                                        <li><a href="/katalog">Lihat Semua...</a></li>
+                                    </ul>
+                                </li>								
+                                <!-- Tambahkan menu Tentang Kami di sini -->
+                                <li><a href="{{ url_for('about') }}">Tentang Kami</a></li>
+                            </ul>
+                        </nav>
+					</div><!--- END Col -->
+					
+					<div class="col-30 d-none d-xl-block text-end align-self-center">
+						<div class="call_to_action">
+							<a class="btn_two" href="{{ url_for('category', slug='sql-injection') }}">Masuk Lab <i class="fa-solid fa-terminal"></i></a>
+						</div>
+					</div><!--- END Col -->
+					
+					<!-- START MOBILE MENU -->
+                    <ul class="mobile_menu">						
+                        <li><a href="/">Beranda</a></li>	
+                        <li><a href="#">Katalog Modul</a>
+                            <ul class="sub-menu">										
+                                <li><a href="{{ url_for('category', slug='sql-injection') }}">SQL Injection</a></li>
+                                <li><a href="{{ url_for('category', slug='xss') }}">Cross-site Scripting</a></li>
+                                <li><a href="{{ url_for('category', slug='csrf') }}">CSRF</a></li>
+                                <li><a href="{{ url_for('category', slug='sql-injection') }}" class="cta">Lihat Semua Modul</a></li>									
+                            </ul>
+                        </li>
+                        <li><a href="{{ url_for('about') }}">Tentang Kami</a></li>
+                    </ul>			
+				</div><!--- END ROW -->
+			</div><!--- END CONTAINER -->
+		</div> 	  
+		<!-- END NAVBAR -->		
+							
+		<!-- START HOME -->
+		<section  id="home" class="home_bg">	
+			<div class="container">
+				<div class="row">
+					<div class="col-lg-6 col-sm-6 col-xs-12">	
+						<div class="home_content">
+							<h1>Kuasai Keamanan Web dengan Praktek Langsung</h1>
+							<p>Tinggalkan teori yang membosankan. Eksploitasi kerentanan dunia nyata dari tingkat Apprentice hingga Expert di dalam lingkungan lab yang aman dan terisolasi.</p>						
+						</div>
+						<div class="home_btn">
+							<a href="{{ url_for('category', slug='sql-injection') }}" class="cta"><span>Mulai Eksploitasi</span>
+                            <svg width="13px" height="10px" viewBox="0 0 13 10">
+                                <path d="M1,5 L11,5"></path>
+                                <polyline points="8 1 12 5 8 9"></polyline>
+                            </svg>
+                            </a>
+						</div>		
+					</div><!-- END COL-->
+					<div class="col-lg-6 col-sm-6 col-xs-12">	
+						<div class="home_me_img">
+							<img src="{{ url_for('static', filename='assets/images/all-img/home-image.png') }}" class="img-fluid" alt="Cyber Security" />
+							<div class="home_ps">
+								<i class="fa-solid fa-user-shield fa-2x" style="color: #2c7aff;"></i>
+								<h2>48+</h2>
+								<span>Lab Interaktif</span>
+							</div>
+							<div class="home_ps2">
+								<i class="fa-solid fa-bug fa-2x" style="color: #2c7aff;"></i>
+								<h2>16</h2>
+								<span>Kategori Kerentanan</span>
+							</div>
+						</div>		
+					</div><!-- END COL-->
+				</div><!--- END ROW -->			
+			</div><!--- END CONTAINER -->
+		</section>
+		<!-- END  HOME -->
+	</div>
+	<!-- END  TOP HEADER CLASS -->
+	
+	<!-- START COUNTER -->
+	<section class="count_area counter_feature">
+		<div class="container">
+			<div class="row">
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single-counter count_one">
+						<span class="ti-target sc_one"></span>
+						<h2 class="counter-num">16</h2>
+						<p>Kategori Serangan</p>
+					</div>							
+				</div>
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single-counter count_two">
+						<span class="ti-server sc_two"></span>
+						<h2 class="counter-num">48</h2>
+						<p>Lab Terisolasi</p>
+					</div>
+				</div><!-- END COL -->
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single-counter count_three">
+						<span class="ti-cup sc_three"></span>
+						<h2 class="counter-num">3</h2>
+						<p>Level Kesulitan</p>
+					</div>
+				</div><!-- END COL -->
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single-counter count_four">
+						<span class="ti-user sc_four"></span>
+						<h2>Smester 7</h2>
+						<p>Pengguna Aktif</p>
+					</div>
+				</div><!-- END COL -->						
+			</div><!--- END ROW -->
+		</div><!--- END CONTAINER -->		
+	</section>
+	<!-- END COUNTER -->
+	
+	<!-- START ABOUT US HOME ONE -->
+	<section class="ab_one section-padding">
+		<div class="container">									
+			<div class="row">								
+				<div class="col-lg-6 col-sm-12 col-xs-12 wow fadeInUp" data-wow-duration="1s" data-wow-delay="0.2s" data-wow-offset="0">
+					<div class="ab_img">
+						<img src="{{ url_for('static', filename='assets/images/all-img/about1.png') }}" class="img-fluid" alt="Hacking Lab">
+						 <div class="wc_year">
+							<h3><span>100%</span> <br />Praktik Langsung</h3>
+						</div> 
+					</div>
+				</div><!--- END COL -->					
+				<div class="col-lg-6 col-sm-12 col-xs-12 wow fadeInUp" data-wow-duration="1s" data-wow-delay="0.1s" data-wow-offset="0">
+					<div class="ab_content">
+						<h2>Eksploitasi Celah Keamanan Dunia Nyata.</h2>
+						<p>IFSEC Lab Academy mensimulasikan lingkungan aplikasi web (berbasis Flask & Python) yang rentan secara terstruktur. Pelajari cara peretas berpikir agar Anda dapat membangun sistem yang lebih aman.</p>
+					</div>
+					<div class="abmv">
+						<i class="fa-solid fa-code"></i>
+						<h4>Lab Lingkungan Terisolasi</h4>
+						<p>Akses kerentanan tanpa perlu mengatur virtual machine. Setiap pengguna mendapatkan sesi lab interaktif mandiri.</p>
+					</div>	
+					<div class="abmv">
+						<i class="fa-solid fa-book-open-reader"></i>
+						<h4>Tutorial & Analisis Kode</h4>
+						<p>Tidak hanya menyerang, pahami root cause (akar masalah) di level source code backend dan cara memitigasinya.</p>
+					</div>	
+					<div class="cta_two">
+						<!-- Tombol "Pelajari Lebih Lanjut" -->
+                        <a href="{{ url_for('category', slug='sql-injection') }}" class="cta"><span>Pelajari Lebih Lanjut</span>
+                        <svg width="13px" height="10px" viewBox="0 0 13 10">
+                            <path d="M1,5 L11,5"></path>
+                            <polyline points="8 1 12 5 8 9"></polyline>
+                        </svg>
+                        </a>
+					</div>
+				</div><!--- END COL -->																  
+			</div><!--- END ROW -->
+		</div><!--- END CONTAINER -->
+	</section>
+	<!-- END ABOUT US HOME ONE -->	
+	
+	<!-- START TOP PROMO FEATURES -->
+	<section class="tp_feature section-padding">
+	   <div class="container">							
+			<div class="section-title text-center">
+				<h4>Mulai Meretas</h4>
+				<h1>Metodologi Pembelajaran Terstruktur</h1>
+			</div>					
+			<div class="row">					
+				<div class="col-lg-3 col-sm-6 col-xs-12 wow fadeInUp" data-wow-duration="1s" data-wow-delay="0.4s" data-wow-offset="0">
+					<div class="single_tp">
+						<h3>Level Apprentice</h3>
+						<i class="fa-solid fa-baby"></i>
+						<p>Pahami konsep dasar serangan web tanpa filter proteksi. Cocok untuk pemula.</p>
+					</div>
+				</div><!-- END COL -->				
+				<div class="col-lg-3 col-sm-6 col-xs-12 wow fadeInUp" data-wow-duration="1s" data-wow-delay="0.2s" data-wow-offset="0">
+					<div class="single_tp st_one">
+						<h3>Level Practitioner</h3>
+						<i class="fa-solid fa-user-ninja"></i>
+						<p>Hadapi mekanisme pertahanan (WAF/Filter) dan pelajari teknik bypass tingkat menengah.</p>
+					</div>
+				</div><!-- END COL -->			
+				<div class="col-lg-3 col-sm-6 col-xs-12 wow fadeInUp" data-wow-duration="1s" data-wow-delay="0.3s" data-wow-offset="0">
+					<div class="single_tp st_two">
+						<h3>Level Expert</h3>
+						<i class="fa-solid fa-user-secret"></i>
+						<p>Eksploitasi kerentanan buta (blind) dan bypass arsitektur backend yang kompleks.</p>
+					</div>
+				</div><!-- END COL -->			
+				<div class="col-lg-3 col-sm-6 col-xs-12 wow fadeInUp" data-wow-duration="1s" data-wow-delay="0.4s" data-wow-offset="0">
+					<div class="single_tp st_three">
+						<h3>Kasus Dunia Nyata</h3>
+						<i class="fa-solid fa-globe"></i>
+						<p>Lab didesain dari kerentanan nyata (CVE) dan standar OWASP Top 10 terbaru.</p>
+					</div>
+				</div><!-- END COL -->							
+			</div><!-- END ROW -->
+		</div><!-- END CONTAINER -->
+	</section>
+	<!-- END TOP PROMO FEATURES -->		
+
+	<!-- START TOPIC-->
+	<section class="topic_content_p2 section-padding">
+	   <div class="container">
+			<div class="section-title">
+				<h4>Katalog Lengkap</h4>
+				<h1>Modul Serangan Populer</h1>
+			</div>		
+			<div class="row">									
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single_tca sc_one">
+						<i class="fa-solid fa-database fa-3x mb-3" style="color: #2c7aff;"></i>
+						<h2><a href="/katalog/sql-injection">SQL Injection</a></h2>
+						<span>3 Level Kesulitan</span>
+					</div>					
+				</div><!-- END COL -->							
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single_tca sc_two">
+						<i class="fa-solid fa-bug fa-3x mb-3" style="color: #ff5e14;"></i>
+						<h2><a href="/katalog/xss">Cross-Site Scripting</a></h2>
+						<span>3 Level Kesulitan</span>
+					</div>					
+				</div><!-- END COL -->							
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single_tca sc_three">
+						<i class="fa-solid fa-shield-halved fa-3x mb-3" style="color: #16a085;"></i>
+						<h2><a href="/katalog/csrf">CSRF</a></h2>
+						<span>3 Level Kesulitan</span>
+					</div>					
+				</div><!-- END COL -->							
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single_tca sc_four">
+						<i class="fa-solid fa-server fa-3x mb-3" style="color: #9b59b6;"></i>
+						<h2><a href="/katalog/ssrf">Server-Side Request Forgery</a></h2>
+						<span>3 Level Kesulitan</span>
+					</div>					
+				</div><!-- END COL -->							
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single_tca sc_five">
+						<i class="fa-solid fa-file-code fa-3x mb-3" style="color: #e74c3c;"></i>
+						<h2><a href="/katalog/xxe">XXE Injection</a></h2>
+						<span>3 Level Kesulitan</span>
+					</div>					
+				</div><!-- END COL -->							
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single_tca sc_six">
+						<i class="fa-solid fa-unlock-keyhole fa-3x mb-3" style="color: #f1c40f;"></i>
+						<h2><a href="/katalog/access-control">Access Control</a></h2>
+						<span>3 Level Kesulitan</span>
+					</div>					
+				</div><!-- END COL -->					
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single_tca sc_seven">
+						<i class="fa-solid fa-network-wired fa-3x mb-3" style="color: #34495e;"></i>
+						<h2><a href="/katalog/cors">CORS Misconfiguration</a></h2>
+						<span>3 Level Kesulitan</span>
+					</div>					
+				</div><!-- END COL -->					
+				<div class="col-lg-3 col-sm-6 col-xs-12">
+					<div class="single_tca sc_eight">
+						<i class="fa-solid fa-upload fa-3x mb-3" style="color: #e67e22;"></i>
+						<h2><a href="/katalog/file-upload">File Upload</a></h2>
+						<span>3 Level Kesulitan</span>
+					</div>					
+				</div><!-- END COL -->	
+				<div class="col-lg-12 text-center mt-4">
+					<div class="cc_btn">
+						<!-- Tombol Kategori Grid Utama -->
+<div class="cc_btn">
+    <!-- Tombol "Lihat Semua Kategori" -->
+    <a href="{{ url_for('category', slug='sql-injection') }}" class="cta"><span>Lihat Semua Kategori</span>
+      <svg width="13px" height="10px" viewBox="0 0 13 10">
+        <path d="M1,5 L11,5"></path>
+        <polyline points="8 1 12 5 8 9"></polyline>
+      </svg>
+    </a>
+</div>
+					</div>
+				</div><!--END COL -->					
+			</div><!-- END ROW -->
+		</div><!-- END CONTAINER -->
+	</section>
+	<!-- END TOPIC -->		
+
+	<!-- START VIDEO -->
+	<section class="vid_area section-padding">
+		<div class="container">																
+			<div class="row">
+				<div class="col-lg-6 col-sm-12 col-xs-12 wow fadeInUDown" data-wow-duration="1s" data-wow-delay="0.2s" data-wow-offset="0">
+					<div class="video-area">
+						<!-- Ganti URL dengan URL video YouTube IFSEC Lab -->
+						<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" class="magnific_popup video-button"><i class="fa fa-play"></i></a>
+					</div>
+				</div><!--- END COL -->
+				<div class="col-lg-6 col-sm-12 col-xs-12 wow fadeInUp" data-wow-duration="1s" data-wow-delay="0.1s" data-wow-offset="0">
+					<div class="cp_content">
+						<h4>Kenali Platform Kami</h4>
+						<h2>Satu Platform, Puluhan Vektor Serangan</h2>
+						<p>Tingkatkan keahlian keamanan web Anda melalui pendekatan ofensif. Pahami bagaimana peretas memanfaatkan kesalahan konfigurasi untuk mengeksploitasi sistem.</p>
+						<ul>
+							<li><span class="ti-check"></span>Lingkungan Server Aman & Legal</li>
+							<li><span class="ti-check"></span>Materi Selalu Diperbarui (OWASP Top 10)</li>
+							<li><span class="ti-check"></span>Dukungan Solusi & Metodologi Perbaikan</li>
+						</ul>
+					</div>
+					<div class="cp_btn">
+						<!-- Tombol "Jelajahi Lab Sekarang" pada video -->
+                        <a href="{{ url_for('category', slug='sql-injection') }}" class="cta"><span>Jelajahi Lab Sekarang</span>
+                        <svg width="13px" height="10px" viewBox="0 0 13 10">
+                            <path d="M1,5 L11,5"></path>
+                            <polyline points="8 1 12 5 8 9"></polyline>
+                        </svg>
+                        </a>
+					</div>
+				</div><!--- END COL -->	
+			</div><!--- END ROW -->
+		</div><!--- END CONTAINER -->
+	</section>
+	<!-- END VIDEO -->			
+
+	<!-- START FOOTER -->
+	<div class="footer section-padding">
+		<div class="container">				
+			<div class="row">						
+				<div class="col-lg-4 col-sm-6 col-xs-12">
+					<div class="single_footer">
+						<a href="/"><img src="{{ url_for('static', filename='assets/images/all-img/logo.png') }}" alt="IFSEC Logo"></a>         
+						<p>IFSEC Lab Academy adalah platform pembelajaran interaktif yang didedikasikan untuk meningkatkan kesadaran dan keahlian praktis dalam bidang keamanan aplikasi web.</p>
+					</div>
+					<div class="foot_social">
+						<ul>
+							<li><a href="#" class="top_f_facebook"><i class="fa-brands fa-github"></i></a></li>
+							<li><a href="#" class="top_f_twitter"><i class="fa-brands fa-discord"></i></a></li>
+							<li><a href="#" class="top_f_linkedin"><i class="fa-brands fa-linkedin-in"></i></a></li>
+						</ul>						
+					</div>					
+				</div><!--- END COL -->						
+				<div class="col-lg-4 col-sm-6 col-xs-12">
+					<div class="single_footer">
+						<h4>Modul Utama</h4>
+						<ul>
+							<li><a href="{{ url_for('category', slug='sql-injection') }}">SQL Injection (SQLi)</a></li>
+							<li><a href="{{ url_for('category', slug='xss') }}">Cross-Site Scripting (XSS)</a></li>
+							<li><a href="{{ url_for('category', slug='ssrf_lab') }}">Server-Side Request Forgery (SSRF)</a></li>
+							<li><a href="{{ url_for('category', slug='csrf') }}">Cross-Site Request Forgery (CSRF)</a></li>
+							<li><a href="/category/ssti">Server-Side Template Injection (SSTI)</a></li>
+						</ul>
+					</div>
+				</div><!--- END COL -->	
+				<div class="col-lg-4 col-sm-6 col-xs-12">
+					<div class="single_footer">
+						<h4>Tautan Cepat</h4>
+						<ul>
+							<li><a href="{{ url_for('about') }}">Tentang Platform</a></li>
+							<li><a href="{{ url_for('category', slug='sql-injection') }}">Katalog Lengkap</a></li>
+							<li><a href="https://portswigger.net/burp">Panduan Penggunaan Burp Suite</a></li>						
+							<li><a href="#">Laporkan Bug</a></li>						
+						</ul>
+					</div>
+				</div><!--- END COL -->					
+			</div><!--- END ROW -->		
+			<div class="row fc">
+				<div class="col-lg-6 col-sm-6 col-xs-12">
+					<div class="footer_copyright">
+						<p>&copy; 2026 IFSEC Lab Academy. Mohammad Bayu Anggara, S.Kom., M.Kom.</p>
+					</div>
+				</div>
+				<div class="col-lg-6 col-sm-6 col-xs-12">
+					<div class="footer_menu">
+						<ul>
+							<li><a href="{{ url_for('about') }}">Terms of Use</a></li>
+							<li><a href="{{ url_for('about') }}"></li>
+							<li><a href="{{ url_for('about') }}"></li>
+						</ul>
+					</div>
+				</div><!-- END COL -->
+			</div>				
+		</div><!--- END CONTAINER -->
+	</div>
+	<!-- END FOOTER -->			
+		
+	<!-- Latest jQuery -->
+	<script src="{{ url_for('static', filename='assets/js/jquery-1.12.4.min.js') }}"></script>
+	<!-- Latest compiled and minified Bootstrap -->
+	<script src="{{ url_for('static', filename='assets/bootstrap/js/bootstrap.min.js') }}"></script>			
+	<!-- owl-carousel min js  -->
+	<script src="{{ url_for('static', filename='assets/owlcarousel/js/owl.carousel.min.js') }}"></script>	
+	<!-- jquery-simple-mobilemenu.min -->
+	<script src="{{ url_for('static', filename='assets/js/jquery-simple-mobilemenu.js') }}"></script>			
+	<!-- magnific-popup js -->               
+	<script src="{{ url_for('static', filename='assets/js/jquery.magnific-popup.min.js') }}"></script>
+	<!-- jquery mixitup min js -->
+	<script src="{{ url_for('static', filename='assets/js/jquery.mixitup.js') }}"></script>		
+	<!-- GSAP AND LOCOMOTIV JS-->
+	<script src="{{ url_for('static', filename='assets/js/gsap.min.js') }}"></script>
+	<script src="{{ url_for('static', filename='assets/js/ScrollTrigger.min.js') }}"></script>
+	<!-- scrolltopcontrol js -->
+	<script src="{{ url_for('static', filename='assets/js/scrolltopcontrol.js') }}"></script>	
+	<!-- jquery inview js -->
+	<script src="{{ url_for('static', filename='assets/js/jquery.inview.min.js') }}"></script>				
+	<!-- WOW - Reveal Animations When You Scroll -->
+	<script src="{{ url_for('static', filename='assets/js/wow.min.js') }}"></script>				
+	<!-- scripts js -->	
+	<script src="{{ url_for('static', filename='assets/js/scripts.js') }}"></script>				
+</body>
+</html>

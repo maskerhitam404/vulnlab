@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Lab: XSS Apprentice - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='xss', level='apprentice') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                BLOG SEARCH
+            </span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse tracking-wider">TARGET LIVE</span>
+        </div>
+
+        <div class="p-8 sm:p-12 max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Cari Artikel Blog</h2>
+            
+            <form method="GET" class="flex flex-col sm:flex-row gap-4 mb-8">
+                <div class="flex-grow">
+                    <input type="text" name="q" value="{{ raw_q }}" class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition" placeholder="Masukkan kata kunci pencarian...">
+                </div>
+                <button type="submit" class="bg-brand-blue hover:bg-blue-600 text-white font-bold py-2.5 px-8 rounded-md transition shadow-md shadow-blue-500/30 whitespace-nowrap">
+                    Cari
+                </button>
+            </form>
+
+            <!-- Area Hasil Pencarian (VULNERABLE) -->
+            {% if q %}
+            <div class="mt-8 p-6 bg-gray-50 border border-gray-200 rounded-lg">
+                <p class="text-gray-700 text-lg">
+                    Hasil untuk: <span class="font-semibold text-brand-blue">{{ q | safe }}</span>
+                </p>
+                <p class="text-sm text-gray-500 mt-2">Tidak ada artikel yang cocok dengan pencarian Anda.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="bg-gray-50 border-t border-gray-100 p-4 text-center">
+            <code class="text-xs text-gray-500 font-mono">
+                [GET] /lab/xss/apprentice/search?q=... | Nilai dipantulkan apa adanya ke HTML
+            </code>
+        </div>
+    </div>
+</div>
+{% endblock %}

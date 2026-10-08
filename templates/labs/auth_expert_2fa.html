@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Lab: 2FA Verification - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-16">
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 font-mono text-sm flex justify-between">
+            <span>SECURE LOGIN (STEP 2)</span>
+            <span class="text-green-400">TARGET</span>
+        </div>
+        
+        <div class="p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Verifikasi 2FA</h2>
+            <p class="text-sm text-gray-500 mb-6 text-center">Masukkan 4 digit kode yang dikirim ke perangkat Anda.</p>
+
+            {% if error_msg %}
+            <div class="mb-4 bg-red-50 border border-red-200 p-3 text-sm text-red-700 font-medium text-center rounded">{{ error_msg }}</div>
+            {% endif %}
+            
+            {% if success_msg %}
+            <div class="mb-4 bg-green-50 border border-green-200 p-4 text-center rounded">
+                <div class="text-green-600 mb-2 flex justify-center">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <p class="text-green-800 font-bold">{{ success_msg }}</p>
+            </div>
+            {% else %}
+            <form method="POST" action="/lab/authentication/expert/2fa">
+                <div class="mb-6">
+                    <input type="text" name="mfa-code" maxlength="4" placeholder="0000" class="w-full text-center tracking-widest text-3xl px-3 py-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-brand-blue font-mono" required autocomplete="off">
+                </div>
+                <button type="submit" class="w-full bg-brand-blue hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition shadow">Verifikasi</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

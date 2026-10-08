@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Lab: XXE Expert - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='xxe', level='expert') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span>STOCK CHECKER (XINCLUDE VULN)</span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">TARGET LIVE</span>
+        </div>
+
+        <div class="p-8 sm:p-12 max-w-2xl mx-auto text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Pengecekan Stok Barang</h2>
+            <p class="text-gray-500 mb-8">Formulir HTML standar (bukan XML). Backend membungkus input ke dalam XML.</p>
+            
+            <form method="POST" action="/lab/xxe/expert/stock" class="flex flex-col sm:flex-row gap-4 mb-6" id="stockForm">
+                <input type="text" name="productId" value="1" class="flex-grow px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-blue outline-none transition font-mono">
+                <button type="submit" class="bg-brand-blue hover:bg-blue-600 text-white font-bold py-2.5 px-8 rounded-md transition shadow-md">
+                    Cek Stok
+                </button>
+            </form>
+
+            <div id="result-box" class="hidden p-4 rounded-md font-mono text-sm text-left break-words overflow-x-auto border bg-green-50 text-green-800"></div>
+        </div>
+        
+        <div class="bg-gray-50 border-t border-gray-100 p-4 text-center">
+            <code class="text-xs text-gray-500 font-mono">
+                [POST] /lab/xxe/expert/stock | Format Body: application/x-www-form-urlencoded
+            </code>
+        </div>
+    </div>
+</div>
+
+<script>
+// Mengambil alih submit form menggunakan Fetch API untuk UX yang lebih baik
+document.getElementById('stockForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new URLSearchParams(new FormData(this));
+    
+    fetch(this.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+    })
+    .then(r => r.text().then(text => ({status: r.status, text})))
+    .then(data => {
+        const resBox = document.getElementById('result-box');
+        resBox.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-800');
+        resBox.classList.add(data.status === 200 ? 'bg-green-50' : 'bg-red-50');
+        resBox.innerText = data.text;
+    });
+});
+</script>
+{% endblock %}

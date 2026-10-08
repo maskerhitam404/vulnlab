@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Lab: XXE Apprentice - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='xxe', level='apprentice') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span>STOCK CHECKER (XML API)</span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">TARGET LIVE</span>
+        </div>
+
+        <div class="p-8 sm:p-12 max-w-2xl mx-auto text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Pengecekan Stok Barang</h2>
+            <p class="text-gray-500 mb-8">Masukkan ID Produk untuk melihat ketersediaan stok di gudang.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                <input type="text" id="productId" value="1" class="flex-grow px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-brand-blue outline-none transition font-mono">
+                <button onclick="checkStock()" class="bg-brand-blue hover:bg-blue-600 text-white font-bold py-2.5 px-8 rounded-md transition shadow-md">
+                    Cek Stok
+                </button>
+            </div>
+
+            <div id="result-box" class="hidden p-4 rounded-md font-mono text-sm text-left break-words overflow-x-auto border"></div>
+        </div>
+        
+        <div class="bg-gray-50 border-t border-gray-100 p-4 text-center">
+            <code class="text-xs text-gray-500 font-mono">
+                [POST] /lab/xxe/apprentice/stock | Format Body: application/xml
+            </code>
+        </div>
+    </div>
+</div>
+
+<script>
+function checkStock() {
+    const id = document.getElementById('productId').value;
+    const xmlPayload = `<?xml version="1.0" encoding="UTF-8"?><stockCheck><productId>${id}</productId></stockCheck>`;
+    
+    fetch('/lab/xxe/apprentice/stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/xml' },
+        body: xmlPayload
+    })
+    .then(r => r.text().then(text => ({status: r.status, text})))
+    .then(data => {
+        const resBox = document.getElementById('result-box');
+        resBox.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'border-red-200', 'bg-green-50', 'text-green-800', 'border-green-200');
+        
+        if (data.status === 200) {
+            resBox.classList.add('bg-green-50', 'text-green-800', 'border-green-200');
+        } else {
+            resBox.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+        }
+        resBox.innerText = data.text;
+    });
+}
+</script>
+{% endblock %}

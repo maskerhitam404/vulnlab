@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Lab: File Upload Expert - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-16">
+    <a href="{{ url_for('tutorial', slug='file-upload', level='expert') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 font-mono text-sm flex justify-between">
+            <span>USER PROFILE (BLACKLIST)</span>
+            <span class="text-green-400">TARGET</span>
+        </div>
+        
+        <div class="p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2 text-center">Perbarui Avatar</h2>
+            <p class="text-gray-500 mb-6 text-sm text-center">Demi keamanan, ekstensi .php diblokir pada server ini.</p>
+            
+            {% if message %}
+                {% if status == 'success' %}
+                <div class="mb-6 bg-green-50 border-l-4 border-green-500 p-4 text-green-800 font-bold font-mono text-sm break-words">{{ message }}</div>
+                {% elif status == 'error' %}
+                <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 text-red-800 font-medium text-sm">{{ message }}</div>
+                {% else %}
+                <div class="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 text-blue-800 font-medium text-sm">{{ message }}</div>
+                {% endif %}
+            {% endif %}
+            
+            <form method="POST" action="/lab/file-upload/expert" enctype="multipart/form-data">
+                <div class="mb-6 border-2 border-dashed border-gray-300 p-6 text-center rounded-md bg-gray-50">
+                    <input type="file" name="avatar" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-blue file:text-white hover:file:bg-blue-600">
+                </div>
+                <button type="submit" class="w-full bg-brand-blue hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-md transition shadow">Unggah Avatar</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

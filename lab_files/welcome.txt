@@ -1,0 +1,2 @@
+Selamat datang di image/file viewer lab.
+Coba lihat file lain dengan mengubah parameter filename.

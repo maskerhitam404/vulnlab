@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Lab: Access Control Practitioner - IFSEC LAB{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='access-control', level='practitioner') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span>SUPPORT PORTAL</span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">TARGET LIVE</span>
+        </div>
+        <div class="p-8 sm:p-12 text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Pusat Bantuan</h2>
+            <p class="text-gray-500 mb-8">Berikut adalah tiket bantuan yang Anda kirimkan ke tim administrator.</p>
+            
+            <div class="bg-gray-50 p-6 rounded-md border border-gray-200 flex justify-between items-center">
+                <div class="text-left">
+                    <h4 class="font-bold text-gray-800 text-lg">Bantuan Reset Password</h4>
+                    <p class="text-sm text-gray-500">Status: Menunggu Balasan</p>
+                </div>
+                <a href="/lab/access-control/practitioner/ticket?id=1" class="bg-brand-blue hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-md transition shadow-md">
+                    Lihat Tiket
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

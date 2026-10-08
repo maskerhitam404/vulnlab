@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Lab: DOM XSS Expert - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='dom-based', level='expert') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span>CHECKOUT SUCCESS</span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">TARGET LIVE</span>
+        </div>
+
+        <div class="p-8 sm:p-12 max-w-2xl mx-auto text-center">
+            <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Pembayaran Berhasil!</h2>
+            <p class="text-gray-600 mb-10">Terima kasih atas pesanan Anda. Resi pembayaran telah dikirimkan ke email yang terdaftar.</p>
+            
+            <!-- Elemen ini akan dimodifikasi oleh JavaScript -->
+            <a id="back-link" href="/" class="inline-block bg-brand-blue hover:bg-blue-600 text-white font-bold py-3 px-10 rounded-lg transition duration-300 shadow-md">
+                Kembali ke Belanja
+            </a>
+        </div>
+
+        <div class="bg-gray-50 border-t border-gray-100 p-4 text-center">
+            <code class="text-xs text-gray-500 font-mono">
+                Source: location.search | Sink: element.setAttribute('href', ...)
+            </code>
+        </div>
+    </div>
+</div>
+
+<!-- JAVASCRIPT RENTAN (DOM OPEN REDIRECTION) -->
+<script>
+    window.onload = function() {
+        // Otomatis men-set param ?returnUrl=/ di URL jika belum ada, hanya untuk simulasi lab
+        if (!window.location.search) {
+            window.history.replaceState({}, '', window.location.pathname + '?returnUrl=/');
+        }
+
+        var urlParams = new URLSearchParams(window.location.search);
+        var returnUrl = urlParams.get('returnUrl');
+        
+        if (returnUrl) {
+            // VULNERABILITY: Menetapkan atribut href secara langsung tanpa memvalidasi 
+            // apakah nilai URL menggunakan protokol berbahaya seperti javascript:
+            document.getElementById('back-link').setAttribute('href', returnUrl);
+        }
+    };
+</script>
+{% endblock %}

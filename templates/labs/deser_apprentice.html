@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Lab: Deserialization Apprentice - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='deserialization', level='apprentice') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span>SESSION OBJECT MANIPULATION</span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">TARGET LIVE</span>
+        </div>
+
+        <div class="p-8 sm:p-12 text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Manajemen Profil</h2>
+            <p class="text-gray-500 mb-8">Sesi Anda dilacak menggunakan <i>cookie</i> yang berisi objek yang di-<i>serialize</i>.</p>
+            
+            {% if is_admin %}
+            <div class="bg-green-100 border border-green-300 p-8 rounded-lg mb-6">
+                <div class="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-green-800">Akses Admin Diberikan!</h3>
+                <p class="text-green-700 mt-2">Selamat, Anda berhasil memanipulasi atribut <code>is_admin</code> pada objek JSON.</p>
+                <div class="mt-4 p-3 bg-green-900 text-green-400 font-mono text-sm rounded text-left">
+                    flag{b4s364_js0n_m4n1pul4t10n}
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-gray-100 border border-gray-300 p-8 rounded-lg mb-6">
+                <h3 class="text-xl font-bold text-gray-800">Halo, {{ username | default('wiener') }}</h3>
+                <p class="text-gray-600 mt-2">Status akun Anda saat ini adalah: <span class="font-bold text-red-600 uppercase">User Biasa</span>.</p>
+                <p class="text-gray-500 text-sm mt-4">Anda tidak memiliki izin untuk melihat panel kontrol.</p>
+            </div>
+            {% endif %}
+            
+            <p class="text-sm text-gray-500">Gunakan fitur Developer Tools (F12) &gt; Storage/Application &gt; Cookies untuk memeriksa sesi Anda.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

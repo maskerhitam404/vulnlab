@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Katalog Modul - IFSEC LAB{% endblock %}
+
+{% block content %}
+<!-- START BRADCAM -->
+<div class="bradcam_area">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="bradcam_text text-center">
+                    <h3>Katalog Modul Serangan</h3>
+                    <p><a href="{{ url_for('index') }}">Beranda</a> / Katalog</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END BRADCAM -->
+
+<!-- START CATEGORY LIST -->
+<section class="topic_content_p2 section-padding">
+    <div class="container">
+        <div class="section-title text-center mb-5">
+            <h4>Pilih Topik</h4>
+            <h1>Eksplorasi Kerentanan Web</h1>
+        </div>		
+        
+        <div class="row">
+            {% for cat in categories %}
+            <div class="col-lg-3 col-sm-6 col-xs-12 mb-4">
+                <div class="single_tca sc_one p-4 border rounded shadow-sm hover:shadow-lg transition text-center" style="height: 100%;">
+                    <!-- Ikon Default Jika Tidak Ada Gambar -->
+                    <i class="fa-solid fa-bug fa-3x mb-3" style="color: #2c7aff;"></i>
+                    
+                    <h3 class="mb-2"><a href="/katalog/{{ cat.slug }}" class="text-dark font-weight-bold">{{ cat.name }}</a></h3>
+                    <p class="text-muted small mb-3">{{ cat.summary }}</p>
+                    
+                    {% if cat.implemented %}
+                    <span class="badge bg-success text-white px-3 py-1">Tersedia</span>
+                    {% else %}
+                    <span class="badge bg-secondary text-white px-3 py-1">Segera Hadir</span>
+                    {% endif %}
+                </div>					
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+<!-- END CATEGORY LIST -->
+{% endblock %}

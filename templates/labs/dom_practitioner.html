@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Lab: DOM XSS Practitioner - IFSEC LAB{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+    <a href="{{ url_for('tutorial', slug='dom-based', level='practitioner') }}" class="text-brand-blue hover:text-blue-700 font-medium mb-6 inline-flex items-center transition">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali ke tutorial
+    </a>
+
+    <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden" id="app-container">
+        <div class="bg-navy-900 text-white px-6 py-3 flex justify-between items-center font-mono text-sm">
+            <span>THEME SETTINGS</span>
+            <span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold animate-pulse">TARGET LIVE</span>
+        </div>
+
+        <div class="p-8 sm:p-12 max-w-2xl mx-auto text-center">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Pilih Tema Profil Anda</h2>
+            <p class="text-gray-600 mb-8">Tema Anda saat ini dievaluasi secara dinamis: <strong id="theme-name" class="text-brand-blue uppercase">Default</strong></p>
+            
+            <div class="flex justify-center gap-4">
+                <a href="#dark" onclick="location.reload()" class="bg-gray-800 text-white font-bold py-2 px-6 rounded shadow hover:bg-gray-700">Tema Gelap</a>
+                <a href="#light" onclick="location.reload()" class="bg-gray-100 text-gray-800 font-bold py-2 px-6 rounded shadow border hover:bg-white">Tema Terang</a>
+                <a href="#navy" onclick="location.reload()" class="bg-navy-900 text-white font-bold py-2 px-6 rounded shadow hover:bg-navy-800">Tema Navy</a>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 border-t border-gray-100 p-4 text-center">
+            <code class="text-xs text-gray-500 font-mono">
+                Source: location.hash | Sink: eval()
+            </code>
+        </div>
+    </div>
+</div>
+
+<!-- JAVASCRIPT RENTAN (DOM XSS) -->
+<script>
+    window.onload = function() {
+        var hashParam = window.location.hash.substring(1);
+        
+        if (hashParam) {
+            // Decode nilai hash jika ada URL encoding (seperti %20, %3B)
+            var decodedHash = decodeURIComponent(hashParam);
+            
+            try {
+                // VULNERABILITY: Eksekusi String mentah dari input pengguna ke dalam eval()
+                eval("var userTheme = '" + decodedHash + "';");
+                
+                document.getElementById('theme-name').innerText = userTheme;
+            } catch (e) {
+                console.error("Gagal memuat tema.");
+            }
+        }
+    };
+</script>
+{% endblock %}
