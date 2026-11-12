@@ -616,7 +616,7 @@ if referer is not None:
 """
 }
         },
-    "clickjacking": {
+"clickjacking": {
         "apprentice": {
             "title": "Clickjacking Dasar tanpa Proteksi",
             "video_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
@@ -629,18 +629,17 @@ if referer is not None:
 <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Analisis Kerentanan</h3>
 <p>Kerentanan Clickjacking terjadi karena halaman target tidak memiliki perlindungan <i>anti-framing</i>. Aplikasi yang aman seharusnya mengirimkan HTTP Header <code>X-Frame-Options: DENY</code> (atau <code>SAMEORIGIN</code>), atau menggunakan <code>Content-Security-Policy: frame-ancestors</code> untuk mencegah situs pihak ketiga memuatnya di dalam iframe.</p>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Langkah Eksploitasi (Step-by-Step)</h3>
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Langkah Eksploitasi Dasar</h3>
 <ol class="list-decimal pl-5 space-y-2 mb-4">
-<li>Buka teks editor di komputer Anda dan buat sebuah file bernama <code>exploit.html</code>.</li>
-<li>Buat struktur HTML yang memuat iframe menuju URL lab target: <code>http://127.0.0.1:5000/lab/clickjacking/apprentice/delete</code>.</li>
-<li>Gunakan CSS untuk membuat elemen <code>&lt;iframe&gt;</code> memiliki posisi <code>absolute</code>, z-index yang lebih tinggi (berada di atas), dan tingkat transparansi (<code>opacity</code>) sekitar 0.3 agar Anda masih bisa melihat halaman target untuk proses penyelarasan (<i>alignment</i>).</li>
-<li>Buat sebuah tombol umpan (misalnya "KLIK SAYA UNTUK MENANG!").</li>
-<li>Buka file <code>exploit.html</code> di browser Anda. Ubah nilai <code>top</code> dan <code>left</code> pada CSS iframe secara perlahan hingga tombol "Hapus Akun Permanen" dari iframe <b>tepat berada di bawah</b> tombol umpan Anda.</li>
-<li>Setelah posisinya pas, ubah <code>opacity: 0.3;</code> menjadi <code>opacity: 0.0001;</code> (nyaris tak terlihat). <i>Payload</i> Anda siap dikirim ke korban!</li>
+    <li>Buat struktur HTML yang memuat iframe menuju URL lab target: <code>http://127.0.0.1:5000/lab/clickjacking/apprentice/delete</code>.</li>
+    <li>Gunakan CSS untuk membuat elemen <code>&lt;iframe&gt;</code> memiliki posisi <code>absolute</code>, z-index yang lebih tinggi (berada di atas), dan tingkat transparansi (<code>opacity</code>) sekitar 0.3 agar Anda masih bisa melihat halaman target untuk proses penyelarasan (<i>alignment</i>).</li>
+    <li>Buat sebuah tombol umpan (misalnya "KLIK SAYA UNTUK MENANG!").</li>
+    <li>Ubah nilai <code>top</code> dan <code>left</code> pada CSS iframe secara perlahan hingga tombol "Hapus Akun Permanen" dari iframe <b>tepat berada di bawah</b> tombol umpan Anda.</li>
+    <li>Setelah posisinya pas, ubah <code>opacity: 0.3;</code> menjadi <code>opacity: 0.0001;</code> (nyaris tak terlihat).</li>
 </ol>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">4. Payload HTML Penyerang</h3>
-<pre>&lt;html&gt;
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">4. Payload HTML Penyerang Dasar</h3>
+<pre><code class="language-html">&lt;html&gt;
 &lt;head&gt;
     &lt;style&gt;
         /* Elemen iframe web target (transparan dan di atas) */
@@ -670,33 +669,75 @@ if referer is not None:
     &lt;div class="decoy-button"&gt;KLIK SAYA UNTUK MENANG HADIAH!&lt;/div&gt;
     &lt;iframe src="http://127.0.0.1:5000/lab/clickjacking/apprentice/delete"&gt;&lt;/iframe&gt;
 &lt;/body&gt;
-&lt;/html&gt;</pre>
-            """
+&lt;/html&gt;</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">5. Eksploitasi Tingkat Lanjut & Hosting Lokal</h3>
+<p class="mb-4">Untuk mensimulasikan serangan secara realistis, <em>payload</em> HTML penyerang harus di-<em>host</em> pada server penyerang (di lab ini kita gunakan localhost port 8000) dan diakses oleh korban. Berikut adalah tiga metode pembuatan dan pengujian eksploitasi:</p>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Manual Web Server (Python)</h4>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong>, buat folder baru, dan simpan <em>payload</em> HTML di atas ke dalam file <code>exploit.html</code>.</li>
+    <li>Di direktori tersebut, jalankan server web lokal Python:
+        <pre><code class="language-bash">python3 -m http.server 8000</code></pre>
+    </li>
+    <li>Buka profil <em>browser</em> alternatif (misal jika Anda membuat <em>payload</em> di Chrome, gunakan Firefox sebagai korban). Pastikan <em>browser</em> korban sudah <em>login</em> di IFSEC Lab.</li>
+    <li>Akses server penyerang Anda: <code>http://127.0.0.1:8000/exploit.html</code>.</li>
+    <li>Klik tombol umpan tersebut, dan lihat bagaimana akun/data target terhapus secara ajaib!</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Menggunakan ClickjackPoc (GitHub)</h4>
+<p class="text-sm text-gray-600 mb-2">Menyelaraskan (<i>aligning</i>) koordinat piksel secara manual memakan waktu. Tools otomatis ini mempermudahnya melalui antarmuka visual (<i>Drag & Drop</i>).</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong> di Kali Linux dan kloning repositori:
+        <pre><code class="language-bash">git clone https://github.com/Raiders0786/ClickjackPoc.git
+cd ClickjackPoc</code></pre>
+    </li>
+    <li>Jalankan <em>tools</em> tersebut (buka <code>index.html</code> pada tools tersebut di <em>browser</em> Anda).</li>
+    <li>Masukkan URL target lab: <code>http://127.0.0.1:5000/lab/clickjacking/apprentice/delete</code></li>
+    <li>Gunakan <em>slider</em> visual atau fitur geser pada <em>tools</em> untuk memosisikan iframe sehingga tombol target ("Hapus Akun") tepat berada di atas elemen penyamar.</li>
+    <li>Klik <strong>Export HTML</strong> atau <strong>Save</strong>. Simpan hasilnya dengan nama <code>poc.html</code>.</li>
+    <li>Gunakan perintah <code>python3 -m http.server 8000</code> di folder tempat file tersebut disimpan.</li>
+    <li>Akses menggunakan <em>browser</em> korban di <code>http://127.0.0.1:8000/poc.html</code> untuk membuktikan serangan.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 3: Menggunakan Burp Suite (Clickbandit)</h4>
+<p class="text-sm text-gray-600 mb-2">Burp Clickbandit adalah alat bawaan Burp Suite yang berjalan langsung di konsol <em>browser</em> Anda untuk menjahit serangan Clickjacking secara presisi sesuai dengan <i>viewport</i> aktual halaman.</p>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Buka Burp Suite, pada panel navigasi atas pilih menu <strong>Burp</strong> &gt; <strong>Burp Clickbandit</strong>.</li>
+    <li>Klik tombol <strong>Copy Clickbandit to clipboard</strong>.</li>
+    <li>Buka tab <em>browser</em> baru dan navigasikan ke halaman web target secara normal: <code>http://127.0.0.1:5000/lab/clickjacking/apprentice/delete</code></li>
+    <li>Tekan F12 untuk membuka <strong>Developer Tools</strong>, lalu masuk ke tab <strong>Console</strong>.</li>
+    <li>Tempelkan (<em>paste</em>) <em>script</em> Clickbandit dari <em>clipboard</em> lalu tekan <strong>Enter</strong>. Antarmuka Clickbandit akan termuat di atas halaman web.</li>
+    <li>Klik tombol <strong>Start</strong>, lalu klik tepat pada tombol "Hapus Akun Permanen" (ini akan merekam posisi elemen yang rentan).</li>
+    <li>Klik <strong>Finish</strong>, kemudian klik <strong>Save</strong> untuk mengunduh <em>Proof of Concept</em> (misal: <code>clickbandit.html</code>).</li>
+    <li>Jalankan server lokal (<code>python3 -m http.server 8000</code>) di folder penyimpanan file tersebut dan akses melalui <em>browser</em> korban untuk melihat efektivitasnya.</li>
+</ol>
+"""
         },
-        "practitioner": {
+"practitioner": {
             "title": "Bypass Frame-Buster Script Menggunakan Sandbox",
             "video_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
             "goal": "Bypass proteksi JavaScript <i>frame-buster</i> milik target dengan memanfaatkan atribut HTML5 <code>sandbox</code> pada iframe.",
             "tutorial": """
 <h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Proteksi Frame-Buster Script</h3>
 <p>Sebelum adanya header HTTP modern seperti <code>X-Frame-Options</code>, developer menggunakan JavaScript untuk mencegah <i>framing</i>. Skrip perlindungan klasik (<i>Frame-buster</i>) biasanya terlihat seperti ini:</p>
-<pre>if (top != self) { top.location = self.location; }</pre>
+<pre><code class="language-javascript">if (top != self) { top.location = self.location; }</code></pre>
 <p>Skrip ini mengecek apakah jendela teratas (<code>top</code>) sama dengan jendela saat ini (<code>self</code>). Jika tidak sama (berarti halaman sedang dimuat di dalam iframe), skrip akan memaksa jendela utama untuk mengalihkan URL (<i>redirect</i>) ke URL halaman target, sehingga menghancurkan lapisan Clickjacking penyerang.</p>
 
 <h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Cara Melakukan Bypass</h3>
 <p>Sebagai penyerang, kita dapat mencegah skrip <i>Frame-buster</i> tersebut dieksekusi dengan memanfaatkan atribut HTML5 <b><code>sandbox</code></b> pada tag <code>&lt;iframe&gt;</code> kita.</p>
 <p>Atribut <code>sandbox</code> secara bawaan akan membatasi berbagai kemampuan di dalam iframe, termasuk <b>menonaktifkan eksekusi JavaScript</b>. Dengan menonaktifkan JavaScript, skrip proteksi target tidak akan pernah berjalan.</p>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Langkah Eksploitasi</h3>
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Langkah Eksploitasi Dasar</h3>
 <ol class="list-decimal pl-5 space-y-2 mb-4">
-<li>Gunakan <i>payload</i> dasar dari level Apprentice.</li>
-<li>Jika Anda memuat URL target level Practitioner (<code>/lab/clickjacking/practitioner/delete</code>) ke dalam iframe standar, URL browser Anda akan tiba-tiba berubah dan halaman eksploitasi Anda menghilang (ini akibat ulah Frame-buster).</li>
-<li>Tambahkan atribut <code>sandbox="allow-forms"</code> ke dalam tag iframe Anda. Atribut <code>allow-forms</code> wajib ditambahkan agar korban tetap bisa mengirimkan form Hapus Akun secara otomatis saat tombol ditekan.</li>
-<li>Muat ulang file eksploitasi. Halaman target kini berhasil dibingkai (<i>framed</i>) tanpa interupsi!</li>
+    <li>Gunakan <i>payload</i> dasar dari level Apprentice.</li>
+    <li>Jika Anda memuat URL target level Practitioner (<code>/lab/clickjacking/practitioner/delete</code>) ke dalam iframe standar, URL browser Anda akan tiba-tiba berubah dan halaman eksploitasi Anda menghilang (ini akibat ulah Frame-buster).</li>
+    <li>Tambahkan atribut <code>sandbox="allow-forms"</code> ke dalam tag iframe Anda. Atribut <code>allow-forms</code> wajib ditambahkan agar korban tetap bisa mengirimkan form Hapus Akun secara otomatis saat tombol diteksekusi, meskipun JavaScript-nya telah dilumpuhkan.</li>
+    <li>Muat ulang file eksploitasi. Halaman target kini berhasil dibingkai (<i>framed</i>) tanpa interupsi!</li>
 </ol>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">4. Payload HTML Penyerang</h3>
-<pre>&lt;html&gt;
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">4. Payload HTML Penyerang Dasar</h3>
+<pre><code class="language-html">&lt;html&gt;
 &lt;head&gt;
     &lt;style&gt;
         iframe {
@@ -714,10 +755,56 @@ if referer is not None:
     &lt;!-- Penambahan atribut sandbox --&gt;
     &lt;iframe sandbox="allow-forms" src="http://127.0.0.1:5000/lab/clickjacking/practitioner/delete"&gt;&lt;/iframe&gt;
 &lt;/body&gt;
-&lt;/html&gt;</pre>
-            """
+&lt;/html&gt;</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">5. Eksploitasi Tingkat Lanjut & Praktik Hosting Lokal</h3>
+<p class="mb-4">Untuk menguji serangan secara realistis layaknya seorang <em>Penetration Tester</em>, <em>payload</em> HTML penyerang harus di-*host* di server terpisah dan diakses oleh korban dari <em>browser</em> yang berbeda. Berikut adalah tiga metode pembuatannya:</p>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Manual HTML via Web Server Lokal (Python)</h4>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong> Kali Linux dan buat file HTML:
+        <pre><code class="language-bash">nano exploit.html</code></pre>
+    </li>
+    <li>Tempelkan kode <em>payload</em> pada bagian 4 di atas. Pastikan <code>sandbox="allow-forms"</code> telah ditulis pada tag <code>&lt;iframe&gt;</code>. Simpan dan keluar (Ctrl+O, Enter, Ctrl+X).</li>
+    <li>Jalankan server web lokal bawaan Python di <em>port</em> 8000:
+        <pre><code class="language-bash">python3 -m http.server 8000</code></pre>
+    </li>
+    <li>Buka <em>browser</em> web alternatif di mesin Anda (misal: jika Anda mengakses lab di Firefox, buka Google Chrome). Pastikan di <em>browser</em> tersebut Anda telah melakukan simulasi <em>login</em> ke IFSEC Lab.</li>
+    <li>Akses server penyerang Anda: <code>http://127.0.0.1:8000/exploit.html</code>.</li>
+    <li>Anda akan melihat tombol umpan hijau "KLIK DI SINI". Jika diklik, form akan tereksekusi secara transparan dan aksi "Hapus Akun" berhasil terjadi tanpa memicu <em>frame-buster</em>.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Bypass Frame-Buster Menggunakan ClickjackPoc (GitHub)</h4>
+<p class="text-sm text-gray-600 mb-2">Tools visual otomatis sering kali gagal di level <em>Practitioner</em> karena <em>frame-buster</em> target langsung mem-<em>redirect</em> tools tersebut. Kita harus menyisipkan <em>sandbox</em> ke dalam kodenya.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Kloning dan masuk ke dalam repositori:
+        <pre><code class="language-bash">git clone https://github.com/Raiders0786/ClickjackPoc.git
+cd ClickjackPoc</code></pre>
+    </li>
+    <li>Sebelum menjalankan alat tersebut, kita harus menonaktifkan Javascript pada iframe-nya. Buka kode utama (biasanya <code>index.html</code> atau <em>file template script</em> tersebut) menggunakan editor teks.</li>
+    <li>Cari bagian tag <code>&lt;iframe&gt;</code>, lalu modifikasi dengan menambahkan <code>sandbox="allow-forms"</code> secara manual.</li>
+    <li>Simpan perubahan dan jalankan alat tersebut.</li>
+    <li>Masukkan URL target: <code>http://127.0.0.1:5000/lab/clickjacking/practitioner/delete</code>. Karena kita sudah mengamankannya dengan <em>sandbox</em>, halaman target tidak akan lagi me-<em>redirect</em> antarmuka eksploitasi Anda.</li>
+    <li>Gunakan <em>slider</em> visual untuk menyelaraskan tombol. <em>Export</em> file HTML hasilnya.</li>
+    <li><em>Hosting</em> file hasil <em>export</em> tersebut dengan perintah <code>python3 -m http.server 8000</code> dan akses di <em>browser</em> korban untuk melihat efeknya.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 3: Menggunakan Burp Suite (Clickbandit)</h4>
+<p class="text-sm text-gray-600 mb-2">Burp Suite memiliki modul <em>Clickbandit</em> yang bisa dijalankan langsung di konsol <em>developer tools browser</em> untuk menjahit serangan Clickjacking berdasarkan interaksi pengguna.</p>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Di menu utama Burp Suite, klik menu atas <strong>Burp</strong> &gt; <strong>Burp Clickbandit</strong>.</li>
+    <li>Klik tombol <strong>Copy Clickbandit to clipboard</strong>.</li>
+    <li>Buka tab <em>browser</em> baru dan muat halaman web target secara normal: <code>http://127.0.0.1:5000/lab/clickjacking/practitioner/delete</code></li>
+    <li>Tekan F12 untuk membuka <strong>Developer Tools</strong>, lalu masuk ke tab <strong>Console</strong>.</li>
+    <li>Tempelkan (<em>paste</em>) <em>script</em> Clickbandit yang ada di <em>clipboard</em> lalu tekan <strong>Enter</strong>. Panel antarmuka Clickbandit akan muncul melayang di atas halaman web.</li>
+    <li>Klik <strong>Start</strong> pada panel tersebut, lalu klik tombol "Hapus Akun Permanen" pada halaman target (tindakan ini merekam titik koordinat klik).</li>
+    <li>Klik <strong>Finish</strong>, kemudian klik <strong>Save</strong> untuk mengunduh <em>Proof of Concept</em> HTML-nya (contoh: <code>clickjacking.html</code>).</li>
+    <li><strong>Sangat Penting:</strong> Buka file <code>clickjacking.html</code> yang baru saja diunduh menggunakan editor teks. Cari tag <code>&lt;iframe&gt;</code> dan tambahkan secara manual <code>sandbox="allow-forms"</code>. Jika ini tidak dilakukan, eksploitasi akan gagal akibat skrip <em>frame-buster</em>!</li>
+    <li>Simpan file. Host menggunakan server lokal Python, dan eksekusi pada <em>browser</em> korban.</li>
+</ol>
+"""
         },
-        "expert": {
+"expert": {
             "title": "Clickjacking dengan Pre-filled Form Parameters",
             "video_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
             "goal": "Gabungkan Clickjacking dengan parameter URL untuk memanipulasi target transfer dana sebelum menipu pengguna mengklik tombol konfirmasi.",
@@ -726,38 +813,71 @@ if referer is not None:
 <p>Dalam serangan Clickjacking sederhana, penyerang hanya mengandalkan kondisi formulir yang sudah ada. Namun, hal ini menjadi sangat mematikan jika halaman target memungkinkan parameter dari URL (GET parameters) untuk mengisi formulir secara otomatis (<i>pre-fill</i>).</p>
 <p>Pada lab ini, halaman target berfungsi untuk mengonfirmasi transfer dana sebesar $10,000. Halaman ini menerima parameter URL <code>?to=...</code> yang menentukan siapa akun penerimanya.</p>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Langkah Eksploitasi</h3>
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Persiapan Eksploitasi</h3>
 <ol class="list-decimal pl-5 space-y-2 mb-4">
-<li>Identifikasi fungsionalitas parameter dengan membuka URL target: <code>/lab/clickjacking/expert/transfer</code>. Secara default, dana akan dikirim ke "user_default".</li>
-<li>Ubah URL di browser menjadi <code>/lab/clickjacking/expert/transfer?to=attacker</code>. Anda akan melihat bahwa nama target di halaman web otomatis berubah menjadi "attacker".</li>
-<li>Buat file HTML <i>exploit</i> seperti level-level sebelumnya.</li>
-<li>Pada tag <code>&lt;iframe&gt;</code>, arahkan atribut <code>src</code> ke URL target <b>yang sudah disisipi parameter spesifik milik penyerang</b> (yaitu <code>?to=attacker</code>).</li>
-<li>Sesuaikan posisi CSS agar tombol decoy pas dengan tombol konfirmasi, lalu buat iframe menjadi transparan.</li>
-<li>Ketika korban tertipu dan mengklik tombol, transfer dana akan langsung mengalir ke akun penyerang.</li>
+    <li>Identifikasi fungsionalitas parameter dengan membuka URL target di browser Anda: <br><code>http://127.0.0.1:5000/lab/clickjacking/expert/transfer</code>. Secara default, dana akan dikirim ke "user_default".</li>
+    <li>Ubah URL di browser menjadi <code>http://127.0.0.1:5000/lab/clickjacking/expert/transfer?to=attacker</code>. Anda akan melihat bahwa nama target penerima transfer di halaman web otomatis berubah menjadi "attacker".</li>
+    <li>URL inilah yang wajib Anda jadikan target (<code>src</code>) di dalam elemen iframe transparan Anda.</li>
 </ol>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Payload HTML Penyerang</h3>
-<pre>&lt;html&gt;
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Payload HTML Manual</h3>
+<pre><code class="language-html">&lt;html&gt;
 &lt;head&gt;
     &lt;style&gt;
         iframe {
             position: absolute; width: 800px; height: 600px; 
-            opacity: 0.3; /* Atur ke 0.0001 */ z-index: 2; 
-            top: -160px; left: -60px; /* Selaraskan ini */
+            opacity: 0.3; /* Atur ke 0.0001 saat eksekusi final */ z-index: 2; 
+            top: -160px; left: -60px; /* Selaraskan koordinat ini */
         }
         .decoy-button {
             position: absolute; z-index: 1; top: 250px; left: 300px;
-            padding: 20px 40px; background-color: purple; color: white;
+            padding: 20px 40px; background-color: purple; color: white; font-weight: bold;
         }
     &lt;/style&gt;
 &lt;/head&gt;
 &lt;body&gt;
-    &lt;div class="decoy-button"&gt;KLAIM SALDO GRATIS&lt;/div&gt;
+    &lt;div class="decoy-button"&gt;KLAIM SALDO GRATIS SEKARANG!&lt;/div&gt;
     &lt;!-- Sisipkan parameter target penyerang pada atribut src --&gt;
     &lt;iframe src="http://127.0.0.1:5000/lab/clickjacking/expert/transfer?to=attacker"&gt;&lt;/iframe&gt;
 &lt;/body&gt;
-&lt;/html&gt;</pre>
-            """
+&lt;/html&gt;</code></pre>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">4. Eksploitasi Menggunakan Tools & Local Server</h3>
+<p class="mb-4">Untuk memastikan serangan ini berjalan nyata, kita akan membuat skenario di mana server eksploitasi berjalan secara lokal tanpa layanan <i>hosting</i> eksternal, dan korban membukanya melalui <i>browser</i> lain yang memiliki sesi <i>login</i> aktif.</p>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 1: Otomatisasi dengan ClickjackPoc (GitHub)</h4>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <strong>Terminal</strong> Kali Linux dan kloning <em>tools</em>:
+        <pre><code class="language-bash">git clone https://github.com/Raiders0786/ClickjackPoc.git
+cd ClickjackPoc</code></pre>
+    </li>
+    <li>Jalankan <em>tools</em> tersebut (buka file utamanya di <em>browser</em> atau jalankan <em>script</em> Python pembawanya).</li>
+    <li>Masukkan URL target <strong>lengkap dengan parameternya</strong>: <br><code>http://127.0.0.1:5000/lab/clickjacking/expert/transfer?to=attacker</code></li>
+    <li>Gunakan <em>slider</em> visual pada <em>tools</em> untuk menempatkan tombol konfirmasi transfer tepat di atas tombol umpan <em>game</em>/hadiah Anda.</li>
+    <li>Klik tombol <strong>Export/Save</strong> untuk menghasilkan file HTML eksploitasi (misal: <code>poc.html</code>). Pindahkan file ini ke direktori kerja baru, contoh: <code>mkdir ~/hacker_server && mv poc.html ~/hacker_server/</code>.</li>
+    <li>Masuk ke direktori tersebut dan jalankan web server lokal Python:
+        <pre><code class="language-bash">cd ~/hacker_server
+python3 -m http.server 8080</code></pre>
+    </li>
+    <li>Buka <em>browser</em> alternatif (misalnya Anda menggunakan Firefox untuk <em>tools</em> penyerang, sekarang buka Google Chrome atau profil <em>browser</em> lain yang sudah <em>login</em> sebagai korban di IFSEC Lab).</li>
+    <li>Akses URL server penyerang Anda: <code>http://127.0.0.1:8080/poc.html</code>.</li>
+    <li>Ketika korban mengklik tombol "KLAIM", dana otomatis tertransfer ke akun "attacker" tanpa sepengetahuan korban.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Metode 2: Menggunakan Burp Suite (Clickbandit)</h4>
+<ol class="list-decimal ml-6 space-y-2">
+    <li>Buka Burp Suite, lalu pilih menu <strong>Burp</strong> &gt; <strong>Burp Clickbandit</strong> di panel atas.</li>
+    <li>Klik <strong>Copy Clickbandit to clipboard</strong>.</li>
+    <li>Buka tab <em>browser</em> baru dan navigasikan ke halaman web target dengan parameter manipulasi: <br><code>http://127.0.0.1:5000/lab/clickjacking/expert/transfer?to=attacker</code></li>
+    <li>Tekan F12 untuk membuka <strong>Developer Tools</strong>, buka tab <strong>Console</strong>, <em>paste</em> kode Clickbandit dari <em>clipboard</em>, lalu tekan <strong>Enter</strong>.</li>
+    <li>Antarmuka Clickbandit akan muncul. Klik tombol <strong>Start</strong>.</li>
+    <li>Klik tombol konfirmasi transfer pada halaman web (Clickbandit akan merekam lokasi klik ini).</li>
+    <li>Klik <strong>Finish</strong> pada panel Clickbandit, lalu klik <strong>Save</strong> untuk mengunduh <em>Proof of Concept</em> (contoh: <code>clickbandit.html</code>).</li>
+    <li>Pindahkan file <code>clickbandit.html</code> ke folder server lokal Anda (<code>~/hacker_server</code>).</li>
+    <li>Pastikan server Python berjalan (<code>python3 -m http.server 8080</code>).</li>
+    <li>Gunakan <em>browser</em> korban untuk mengakses <code>http://127.0.0.1:8080/clickbandit.html</code>. Saat korban berinteraksi dengan halaman tersebut, aksi tersembunyi tereksekusi secara transparan dan <em>bypass</em> tercapai sepenuhnya.</li>
+</ol>
+"""
         }
     },
     "dom-based": {
