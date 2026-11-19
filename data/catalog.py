@@ -880,92 +880,387 @@ python3 -m http.server 8080</code></pre>
 """
         }
     },
-    "dom-based": {
+"dom-based": {
         "apprentice": {
             "title": "DOM XSS via document.write / innerHTML",
             "video_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-            "goal": "Eksploitasi kerentanan DOM XSS dengan menyisipkan tag gambar berserta event handler <code>onerror</code> untuk memicu fungsi <code>alert()</code>.",
+            "goal": "Eksploitasi kerentanan DOM XSS dengan menyisipkan tag gambar berserta event handler <code>onerror</code> untuk memicu fungsi <code>alert()</code> serta mengujinya lintas browser pada server lokal yang sama.",
             "tutorial": """
-<h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Teori Dasar DOM XSS</h3>
-<p><b>Document Object Model (DOM)</b> adalah representasi hierarkis dari elemen-elemen halaman web yang dapat dimanipulasi oleh JavaScript. DOM XSS terjadi ketika aplikasi JavaScript mengambil data dari <b>sumber (source)</b> yang dapat dikendalikan penyerang (seperti URL) dan meneruskannya secara tidak aman ke <b>eksekutor (sink)</b> yang mengeksekusi kode tersebut.</p>
+<h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Teori Dasar &amp; Mekanisme DOM XSS</h3>
+<p class="mb-3"><b>Document Object Model (DOM)</b> adalah struktur objek hierarkis yang merepresentasikan seluruh elemen HTML pada halaman web agar dapat dibaca dan dimodifikasi secara dinamis oleh JavaScript di sisi klien (<i>client-side</i>).</p>
+<p class="mb-3"><b>DOM-Based Cross-Site Scripting (DOM XSS)</b> terjadi ketika skrip JavaScript pada aplikasi mengambil data dari <b>Source</b> (sumber input yang dapat dikendalikan oleh pengguna, seperti parameter URL) dan meneruskannya ke <b>Sink</b> (fungsi atau properti berbahaya yang merender HTML atau mengeksekusi kode) tanpa proses sanitasi atau <i>encoding</i>.</p>
+<p>Berbeda dengan Reflected atau Stored XSS tradisional di mana <i>payload</i> diproses oleh server (backend), pada DOM XSS eksekusi terjadi sepenuhnya di dalam <i>browser</i> korban. Hal ini membuat serangan DOM XSS sering kali lolos dari deteksi <i>Web Application Firewall</i> (WAF) berbasis server.</p>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Analisis Kode (Source & Sink)</h3>
-<p>Pada lab ini, halaman memiliki kolom pencarian. Jika Anda melihat <i>source code</i> HTML/JavaScript-nya (Klik Kanan -> Inspect -> Elements), Anda akan menemukan kode berikut:</p>
-<pre>var query = new URLSearchParams(window.location.search).get('q');
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Analisis Source Code Target (Source &amp; Sink)</h3>
+<p class="mb-2">Sebelum menyusun <i>payload</i>, lakukan inspeksi kode klien untuk memetakan aliran data pada halaman pencarian lab (<code>/lab/dom-based/apprentice/search</code>):</p>
+<ol class="list-decimal ml-6 space-y-2 mb-4">
+    <li>Buka halaman lab di <i>browser</i> Anda: <code>http://127.0.0.1:5000/lab/dom-based/apprentice/search</code>.</li>
+    <li>Tekan tombol <code>F12</code> (atau klik kanan pada halaman lalu pilih <b>Inspect</b>) untuk membuka <b>Developer Tools</b>.</li>
+    <li>Buka tab <b>Elements</b> (Chrome/Chromium) atau <b>Inspector</b> (Firefox), lalu cari bagian skrip JavaScript di dalam halaman:
+        <pre><code class="language-javascript">var query = new URLSearchParams(window.location.search).get('q');
 if (query) {
     document.getElementById('search-result').innerHTML = query;
-}</pre>
-<p><b>Source:</b> <code>window.location.search</code> (Mengambil parameter <code>?q=...</code> dari URL).<br>
-<b>Sink:</b> <code>innerHTML</code> (Menyisipkan string langsung ke dalam HTML tanpa sanitasi).</p>
-
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Langkah Eksploitasi</h3>
-<ol class="list-decimal pl-5 space-y-2 mb-4">
-<li>Masukkan kata acak di kolom pencarian, misal: <code>test</code>, dan perhatikan URL berubah menjadi <code>?q=test</code>.</li>
-<li>Karena browser modern biasanya memblokir tag <code>&lt;script&gt;</code> yang disisipkan melalui <code>innerHTML</code>, kita harus menggunakan vektor alternatif seperti event handler pada tag HTML (misal: <code>&lt;img&gt;</code> atau <code>&lt;svg&gt;</code>).</li>
-<li>Ubah URL di address bar browser Anda (atau masukkan ke kolom input) dengan payload berikut:</li>
+}</code></pre>
+    </li>
+    <li>Identifikasi dua komponen utama dari kode tersebut:
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li><b>Source:</b> <code>window.location.search</code> — Mengambil seluruh string kueri setelah tanda tanya (<code>?</code>) pada URL, lalu mengekstrak nilai parameter <code>q</code>.</li>
+            <li><b>Sink:</b> <code>document.getElementById('search-result').innerHTML</code> — Memasukkan nilai mentah variabel <code>query</code> langsung ke dalam elemen DOM sebagai markup HTML aktif.</li>
+        </ul>
+    </li>
+    <li><b>Mengapa Tag <code>&lt;script&gt;</code> Gagal?</b> Berdasarkan spesifikasi keamanan standar HTML5, <i>browser</i> modern secara otomatis menolak mengeksekusi tag <code>&lt;script&gt;</code> yang disisipkan melalui properti <code>innerHTML</code>. Oleh karena itu, kita wajib menggunakan vektor HTML alternatif yang memiliki atribut <i>event handler</i> otomatis, seperti tag <code>&lt;img&gt;</code> dengan <code>onerror</code> atau <code>&lt;svg&gt;</code> dengan <code>onload</code>.</li>
 </ol>
-<pre>&lt;img src="x" onerror="alert(document.domain)"&gt;</pre>
-<p><b>Penjelasan Payload:</b> Browser mencoba memuat gambar dari sumber "x" (yang tidak ada). Karena gagal, event <code>onerror</code> langsung terpicu, dan JavaScript kita (<code>alert</code>) dieksekusi oleh browser secara instan.</p>
-            """
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">3. Metode 1: Eksploitasi Manual &amp; Simulasi Lintas Browser (Tanpa Hosting Eksternal)</h3>
+<p class="mb-4">Karena <i>payload</i> disimpan langsung di dalam parameter URL (<code>?q=...</code>) pada server aplikasi target, penyerang tidak membutuhkan server <i>hosting</i> terpisah. Cukup kirimkan tautan URL yang telah dimodifikasi kepada korban.</p>
+<ol class="list-decimal ml-6 space-y-3 mb-8">
+    <li><b>Uji Perilaku Normal:</b> Ketik kata <code>cybersecurity</code> pada kotak pencarian lalu tekan tombol Cari. Perhatikan bilah alamat URL berubah menjadi:<br>
+        <code>http://127.0.0.1:5000/lab/dom-based/apprentice/search?q=cybersecurity</code>
+    </li>
+    <li><b>Uji Injeksi HTML Dasar:</b> Ganti nilai parameter <code>q</code> pada URL menjadi tag HTML sederhana untuk membuktikan bahwa <code>innerHTML</code> merender tag HTML:<br>
+        <code>http://127.0.0.1:5000/lab/dom-based/apprentice/search?q=&lt;u&gt;tes_html&lt;/u&gt;</code><br>
+        Jika teks muncul dengan garis bawah, artinya input tidak di-<i>escape</i>.
+    </li>
+    <li><b>Susun Payload Eksekusi JavaScript:</b> Gunakan tag gambar dengan sumber (<code>src</code>) tidak valid agar <i>browser</i> langsung memicu <i>event</i> <code>onerror</code>:
+        <pre><code class="language-html">&lt;img src="x" onerror="alert(document.domain)"&gt;</code></pre>
+    </li>
+    <li><b>Lakukan URL Encoding pada Payload:</b> Agar tautan eksploitasi tidak rusak saat disalin, dikirim lewat aplikasi pesan, atau dibuka di <i>browser</i> lain, ubah karakter spesial menjadi format URL-encoded (spasi menjadi <code>%20</code>, tanda kutip menjadi <code>%22</code>, kurung siku menjadi <code>%3C</code> dan <code>%3E</code>):
+        <pre><code>http://127.0.0.1:5000/lab/dom-based/apprentice/search?q=%3Cimg%20src%3D%22x%22%20onerror%3D%22alert(document.domain)%22%3E</code></pre>
+    </li>
+    <li><b>Verifikasi pada Browser Lain (Simulasi Korban):</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>Salin (<i>Copy</i>) seluruh URL hasil <i>encoding</i> pada langkah ke-4.</li>
+            <li>Buka aplikasi <i>browser</i> kedua yang berbeda di komputer Anda (misalnya jika Anda menyusun <i>payload</i> di <b>Firefox</b>, sekarang buka <b>Google Chrome</b>, <b>Chromium</b>, atau jendela <b>Incognito/Private</b> yang mensimulasikan sesi korban).</li>
+            <li>Pastikan server Flask lokal tetap berjalan (<code>127.0.0.1:5000</code>), lalu tempelkan (<i>Paste</i>) tautan tersebut ke bilah alamat <i>browser</i> kedua dan tekan <code>Enter</code>.</li>
+            <li>Pop-up dialog bertuliskan <code>127.0.0.1</code> akan langsung muncul di layar <i>browser</i> korban tanpa memerlukan server tambahan apa pun.</li>
+        </ul>
+    </li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">4. Metode 2: Analisis &amp; Eksploitasi Otomatis dengan Burp Suite (DOM Invader)</h3>
+<p class="mb-4">Pada pengujian aplikasi web berskala besar, membaca ribuan baris JavaScript secara manual sangat memakan waktu. <b>DOM Invader</b> adalah fitur bawaan pada <i>browser</i> terintegrasi Burp Suite yang melacak aliran data dari <i>Source</i> menuju <i>Sink</i> secara <i>real-time</i>.</p>
+<ol class="list-decimal ml-6 space-y-3 mb-8">
+    <li>Buka aplikasi <b>Burp Suite</b> di Kali Linux (pilih <i>Temporary project</i> &gt; <i>Start Burp</i>).</li>
+    <li>Masuk ke tab <b>Proxy</b> &gt; <b>Intercept</b>, lalu klik tombol <b>Open Browser</b> untuk membuka Chromium bawaan Burp.</li>
+    <li><b>Aktifkan DOM Invader:</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>Klik ikon ekstensi (gambar potongan <i>puzzle</i>) di pojok kanan atas jendela Burp Browser.</li>
+            <li>Klik <b>DOM Invader</b>, geser tombol sakelar hingga statusnya menjadi <b>DOM Invader is on</b>.</li>
+            <li>Klik tombol <b>Reload</b> pada panel tersebut agar ekstensi mulai memantau halaman.</li>
+        </ul>
+    </li>
+    <li>Akses URL lab dengan memasukkan kata kunci pelacak (<i>canary</i>) unik pada parameter <code>q</code>:<br>
+        <code>http://127.0.0.1:5000/lab/dom-based/apprentice/search?q=ifseccanary123</code>
+    </li>
+    <li>Tekan <code>F12</code> (atau <code>Ctrl + Shift + I</code>) untuk membuka <b>Developer Tools</b>, lalu klik tab <b>DOM Invader</b> di deretan menu atas DevTools.</li>
+    <li><b>Analisis Hasil Pelacakan:</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>DOM Invader akan menampilkan temuan dengan tingkat keparahan tinggi: <b>Sink: <code>element.innerHTML</code></b> dan <b>Source: <code>location.search</code></b>.</li>
+            <li>Kolom <i>Value</i> akan menyoroti string <code>ifseccanary123</code> yang masuk tanpa sanitasi.</li>
+            <li>Klik tombol <b>Exploit</b> (jika tersedia) atau ganti teks <code>ifseccanary123</code> di bilah alamat URL dengan <code>&lt;img src=x onerror=alert(document.domain)&gt;</code> lalu tekan <code>Enter</code> untuk memicu <i>alert</i>.</li>
+        </ul>
+    </li>
+    <li>Salin URL akhir dari bilah alamat Burp Browser dan buka di <i>browser</i> lain (seperti Firefox) pada mesin lokal yang sama untuk memastikan <i>payload</i> berjalan universal di semua peramban.</li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">5. Metode 3: Pemindaian &amp; Eksploitasi Otomatis via Tools GitHub di Kali Linux</h3>
+<p class="mb-4">Untuk mengotomatiskan pencarian celah DOM XSS dari terminal Kali Linux, kita dapat menggunakan repositori <i>open-source</i> populer dari GitHub yang mendukung analisis DOM dan <i>headless browser</i>.</p>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Opsi A: Menggunakan Dalfox (<code>hahwul/dalfox</code>)</h4>
+<p class="text-sm text-gray-600 mb-2"><b>Dalfox</b> adalah pemindai kerentanan XSS berbasis Go yang sangat cepat dan dilengkapi mesin verifikasi DOM XSS otomatis menggunakan <i>headless browser</i>.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <b>Terminal</b> di Kali Linux, lalu instal Dalfox langsung dari repositori GitHub atau paket Kali:
+        <pre><code class="language-bash"># Mengkloning repositori GitHub resmi Dalfox
+git clone https://github.com/hahwul/dalfox.git
+cd dalfox
+go install
+
+# Alternatif cepat via repository Kali Linux:
+sudo apt update &amp;&amp; sudo apt install -y dalfox</code></pre>
+    </li>
+    <li>Jalankan pemindaian terarah pada parameter <code>q</code> di server lokal Anda:
+        <pre><code class="language-bash">dalfox url "http://127.0.0.1:5000/lab/dom-based/apprentice/search?q=test" -p q</code></pre>
+    </li>
+    <li>Tunggu beberapa detik hingga Dalfox selesai melakukan injeksi dan memverifikasi eksekusi DOM. Pada terminal akan muncul baris hasil terverifikasi (berwarna hijau/merah dengan tag <code>[V]</code>):
+        <pre><code class="language-text">[POC][V][GET][DOM] http://127.0.0.1:5000/lab/dom-based/apprentice/search?q=%22%3E%3Cimg+src%3Dx+onerror%3Dalert%281%29%3E</code></pre>
+    </li>
+    <li>Salin tautan <code>http://127.0.0.1:5000/...</code> yang dihasilkan oleh Dalfox di terminal, lalu buka tautan tersebut di <i>browser</i> lain pada komputer Anda untuk melihat dialog <code>alert(1)</code> dieksekusi secara otomatis.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Opsi B: Menggunakan XSStrike (<code>s0md3v/XSStrike</code>)</h4>
+<p class="text-sm text-gray-600 mb-2"><b>XSStrike</b> memiliki modul analisis statis khusus untuk mendeteksi pola <i>Source</i> dan <i>Sink</i> pada kode JavaScript halaman target sebelum merakit <i>payload</i>.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Kloning repositori <b>XSStrike</b> dari GitHub dan pasang dependensi Python-nya:
+        <pre><code class="language-bash">git clone https://github.com/s0md3v/XSStrike.git
+cd XSStrike
+pip3 install -r requirements.txt --break-system-packages</code></pre>
+    </li>
+    <li>Jalankan XSStrike terhadap URL target lab Anda:
+        <pre><code class="language-bash">python3 xsstrike.py -u "http://127.0.0.1:5000/lab/dom-based/apprentice/search?q=test"</code></pre>
+    </li>
+    <li>Perhatikan bagian awal output terminal. XSStrike akan menampilkan laporan analisis DOM:<br>
+        <code>[+] Checking for DOM vulnerabilities</code><br>
+        <code>[+] Potentially vulnerable objects found</code> (menunjukkan baris kode <code>innerHTML</code> dan <code>location.search</code>).
+    </li>
+    <li>Selanjutnya XSStrike akan menghasilkan daftar <i>payload</i> dengan skor efisiensi (<i>Efficiency: 100</i>). Salin salah satu <i>payload</i> tersebut, tempelkan ke parameter <code>?q=</code> pada URL server lokal, dan jalankan pada <i>browser</i> target.</li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">6. Panduan Mitigasi (Secure Coding)</h3>
+<p class="mb-2">Untuk mengamankan aplikasi dari celah DOM XSS, jangan pernah memasukkan data dari URL atau input pengguna ke dalam properti <code>innerHTML</code>, <code>outerHTML</code>, atau <code>document.write()</code>. Gunakan properti <b><code>textContent</code></b> atau <b><code>innerText</code></b> agar <i>browser</i> memperlakukan seluruh karakter sebagai teks biasa (<i>plain text</i>) dan tidak mengeksekusinya sebagai tag HTML:</p>
+<pre><code class="language-javascript">// AMAN: Browser otomatis meng-encode karakter '&lt;' dan '&gt;' menjadi teks biasa
+var query = new URLSearchParams(window.location.search).get('q');
+if (query) {
+    document.getElementById('search-result').textContent = query;
+}</code></pre>
+"""
         },
-        "practitioner": {
+"practitioner": {
             "title": "DOM XSS via location.hash & eval()",
             "video_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-            "goal": "Bypass konteks string pada fungsi <code>eval()</code> JavaScript menggunakan manipulasi fragmen URL (hash) untuk mengeksekusi kode berbahaya.",
+            "goal": "Bypass konteks string pada fungsi <code>eval()</code> JavaScript menggunakan manipulasi fragmen URL (hash) untuk mengeksekusi kode berbahaya serta mengujinya lintas browser.",
             "tutorial": """
-<h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Bahaya Fungsi eval()</h3>
-<p>Fungsi <code>eval()</code> mengevaluasi string apa pun sebagai kode JavaScript. Jika input pengguna masuk ke dalam <code>eval()</code>, ini sangat berbahaya dan merupakan salah satu <i>sink</i> paling kritis dalam keamanan web.</p>
-<p>Pada lab ini, pengaturan tema warna (Theme) dibaca dari <b>URL Hash</b> (bagian URL setelah tanda <code>#</code>). Perhatikan bahwa fragment hash tidak pernah dikirim ke server backend saat halaman dimuat.</p>
+<h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Teori Dasar &amp; Bahaya Fungsi eval() dengan location.hash</h3>
+<p class="mb-3">Fungsi <code>eval()</code> di JavaScript mengevaluasi sebuah <i>string</i> dan mengeksekusinya secara langsung sebagai kode program. Jika input yang dapat dikendalikan pengguna masuk ke dalam <code>eval()</code> tanpa sanitasi, fungsi ini menjadi salah satu <b>Sink</b> paling kritis dalam keamanan aplikasi web.</p>
+<p class="mb-3">Pada lab ini, aplikasi membaca pengaturan tema warna dari <b>URL Hash</b> (bagian URL setelah tanda <code>#</code>, misalnya <code>#dark</code>) menggunakan properti <code>window.location.hash</code>.</p>
+<p><b>Karakteristik Penting URL Hash:</b> Berdasarkan standar protokol HTTP, browser <b>tidak pernah mengirimkan</b> bagian URL setelah tanda <code>#</code> ke server backend (Flask). Artinya, <i>Web Application Firewall</i> (WAF) atau filter di sisi server tidak akan pernah melihat <i>payload</i> serangan Anda—eksekusi terjadi 100% di dalam browser korban.</p>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Analisis Kode</h3>
-<p>Coba periksa JavaScript di halaman lab:</p>
-<pre>var hash = decodeURIComponent(window.location.hash.substring(1));
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Analisis Source Code &amp; Konteks Injeksi</h3>
+<ol class="list-decimal ml-6 space-y-2 mb-4">
+    <li>Buka halaman lab di browser Anda: <code>http://127.0.0.1:5000/lab/dom-based/practitioner/theme</code>.</li>
+    <li>Tekan <code>F12</code> (atau klik kanan &gt; <b>Inspect</b>) untuk membuka <b>Developer Tools</b>, lalu periksa bagian skrip JavaScript pada halaman tersebut:
+        <pre><code class="language-javascript">var hash = decodeURIComponent(window.location.hash.substring(1));
 if (hash) {
     eval("var theme = '" + hash + "';");
-    // ... setup warna tema
-}</pre>
-<p>Input kita dari URL hash dimasukkan tepat di tengah-tengah tanda kutip: <code>var theme = '[INPUT KITA]';</code></p>
-
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Langkah Eksploitasi</h3>
-<ol class="list-decimal pl-5 space-y-2 mb-4">
-<li>Tugas kita adalah "melarikan diri" (<i>break out</i>) dari deklarasi string JavaScript tersebut.</li>
-<li>Kita perlu memasukkan tanda kutip penutup <code>'</code>, menambahkan titik koma <code>;</code> untuk mengakhiri baris kode pertama, menyisipkan perintah <code>alert()</code>, dan mengomentari sisa kode yang ada <code>//</code>.</li>
-<li>Susun <i>payload</i> kita: <code>'; alert(document.domain); //</code></li>
-<li>Tambahkan <i>payload</i> tersebut ke akhir URL Anda, sehingga terlihat seperti ini:<br>
-<code>.../lab/dom-based/practitioner/theme#'; alert(document.domain); //</code></li>
-<li>Tekan Enter / muat ulang halaman.</li>
+    // ... kode penerapan tema
+}</code></pre>
+    </li>
+    <li><b>Identifikasi Aliran Data:</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li><b>Source:</b> <code>window.location.hash.substring(1)</code> — Mengambil seluruh teks setelah karakter <code>#</code>, lalu mendekode karakter URL melalui <code>decodeURIComponent()</code>.</li>
+            <li><b>Sink:</b> <code>eval(...)</code> — Mengeksekusi hasil penggabungan string sebagai instruksi JavaScript.</li>
+        </ul>
+    </li>
+    <li><b>Mengapa Payload HTML (&lt;img onerror=...&gt;) Tidak Berhasil?</b><br>
+        Berbeda dengan level <i>Apprentice</i> yang berada di konteks HTML (<code>innerHTML</code>), input kita di sini disisipkan <b>di dalam konteks string JavaScript</b>: <code>var theme = '[INPUT_KITA]';</code>. Jika Anda memasukkan tag HTML, JavaScript hanya akan menganggapnya sebagai teks biasa. Untuk mengeksekusi kode, kita harus melakukan <b>String Breakout</b> (keluar dari tanda kutip tunggal).
+    </li>
 </ol>
-<p><b>Hasil Evaluasi Sink:</b> Fungsi eval akan membaca string tersebut sebagai:<br>
-<code>var theme = ''; alert(document.domain); //';</code><br>
-Skrip terpotong dengan aman dan <code>alert()</code> dieksekusi.</p>
-            """
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">3. Metode 1: Eksploitasi Manual &amp; Simulasi Lintas Browser (Tanpa Hosting)</h3>
+<p class="mb-4">Karena <i>payload</i> tertanam langsung pada fragmen URL server lokal aplikasi, Anda tidak membutuhkan web server terpisah untuk melancarkan serangan.</p>
+<ol class="list-decimal ml-6 space-y-3 mb-8">
+    <li><b>Uji Perilaku Normal:</b> Tambahkan <code>#dark</code> di ujung URL lalu tekan <code>Enter</code> (dan <code>F5</code> untuk memuat ulang halaman):<br>
+        <code>http://127.0.0.1:5000/lab/dom-based/practitioner/theme#dark</code>
+    </li>
+    <li><b>Uji Konfirmasi Injeksi (Memicu SyntaxError):</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>Buka tab <b>Console</b> pada Developer Tools (<code>F12</code>).</li>
+            <li>Ubah bagian hash URL menjadi satu tanda kutip tunggal (<code>#'</code>) lalu muat ulang halaman (<code>F5</code>):<br>
+                <code>http://127.0.0.1:5000/lab/dom-based/practitioner/theme#'</code>
+            </li>
+            <li>Pada Console akan muncul pesan galat: <code>Uncaught SyntaxError: Invalid or unexpected token</code>. Ini membuktikan bahwa tanda kutip Anda berhasil memutus string di dalam <code>eval()</code>.</li>
+        </ul>
+    </li>
+    <li><b>Rakit Payload JavaScript Breakout:</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>Gunakan <code>'</code> untuk menutup string <code>var theme = '</code>.</li>
+            <li>Gunakan <code>;</code> untuk mengakhiri pernyataan variabel pertama.</li>
+            <li>Sisipkan perintah JavaScript yang ingin dijalankan: <code>alert(document.domain)</code>.</li>
+            <li>Gunakan <code>//</code> di akhir untuk menjadikan sisa tanda kutip penutup asli (<code>';</code>) sebagai komentar agar tidak menimbulkan <i>SyntaxError</i>.</li>
+        </ul>
+        <pre><code class="language-javascript">'; alert(document.domain); //</code></pre>
+    </li>
+    <li><b>Bentuk URL Eksploitasi Final:</b> Gabungkan URL target dengan <i>payload</i> di atas (gunakan format <i>URL-encoded</i> agar aman saat disalin antar aplikasi):
+        <pre><code>http://127.0.0.1:5000/lab/dom-based/practitioner/theme#'%3B%20alert(document.domain)%3B%20//</code></pre>
+        <p class="text-sm text-gray-600 mt-1"><i>Catatan Evaluasi:</i> Di dalam <code>eval()</code>, kode akan dieksekusi menjadi: <code>var theme = ''; alert(document.domain); //';</code></p>
+    </li>
+    <li><b>Verifikasi Lintas Browser (Simulasi Korban):</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>Salin (<i>Copy</i>) URL eksploitasi lengkap dari langkah ke-4.</li>
+            <li>Buka aplikasi browser kedua yang berbeda di mesin lokal Anda (misalnya jika Anda merakit payload di <b>Firefox</b>, buka <b>Google Chrome</b>, <b>Chromium</b>, atau jendela <b>Incognito</b>).</li>
+            <li>Pastikan server Flask lokal tetap aktif di <code>127.0.0.1:5000</code>, tempelkan URL tersebut ke bilah alamat browser kedua, lalu tekan <code>Enter</code>.</li>
+            <li>Dialog <code>alert</code> menampilkan <code>127.0.0.1</code> akan langsung muncul di browser korban tanpa memerlukan server tambahan.</li>
+        </ul>
+    </li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">4. Metode 2: Pelacakan Taint-Flow dengan Burp Suite (DOM Invader)</h3>
+<p class="mb-4">Jika Anda memantau trafik lewat tab <i>Proxy &gt; HTTP History</i> di Burp Suite, parameter setelah <code>#</code> <b>tidak akan terlihat</b> karena tidak dikirim ke server. Oleh karena itu, kita menggunakan <b>DOM Invader</b> di dalam Burp Browser.</p>
+<ol class="list-decimal ml-6 space-y-3 mb-8">
+    <li>Buka <b>Burp Suite</b> di Kali Linux, masuk ke tab <b>Proxy</b> &gt; <b>Intercept</b>, dan klik <b>Open Browser</b>.</li>
+    <li>Klik ikon ekstensi (<i>puzzle</i>) di pojok kanan atas Burp Browser, pilih <b>DOM Invader</b>, nyalakan sakelar <b>DOM Invader is on</b>, lalu klik <b>Reload</b>.</li>
+    <li>Kunjungi halaman lab dengan menyisipkan string pelacak (<i>canary</i>) unik setelah tanda pagar:<br>
+        <code>http://127.0.0.1:5000/lab/dom-based/practitioner/theme#ifsecprobe99</code>
+    </li>
+    <li>Tekan <code>F12</code> untuk membuka <b>Developer Tools</b>, lalu pilih tab <b>DOM Invader</b>.</li>
+    <li><b>Analisis Temuan:</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>DOM Invader akan mendeteksi aliran data kritis secara otomatis: <b>Source: <code>location.hash</code></b> mengalir langsung ke <b>Sink: <code>eval</code></b>.</li>
+            <li>Klik tombol <b>Stack trace</b> pada temuan tersebut untuk melihat baris pasti tempat fungsi <code>eval()</code> dipanggil dan bagaimana struktur string <code>var theme = 'ifsecprobe99';</code> terbentuk.</li>
+        </ul>
+    </li>
+    <li>Ganti <code>#ifsecprobe99</code> pada bilah alamat Burp Browser menjadi <code>#'; alert(document.domain); //</code> lalu tekan <code>Enter</code> dan <code>F5</code>. Setelah terkonfirmasi, salin tautan tersebut dan buka di browser lain untuk memvalidasi eksploitasi lintas browser.</li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">5. Metode 3: Pemindaian Otomatis via Repositori GitHub di Kali Linux</h3>
+<p class="mb-4">Untuk mengaudit kerentanan DOM XSS berbasis <code>location.hash</code> dan <code>eval()</code> secara otomatis dari terminal Kali Linux, gunakan perangkat berbasis <i>headless browser</i> dari GitHub.</p>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Opsi A: Menggunakan DOMDig (<code>fcavallarin/domdig</code>)</h4>
+<p class="text-sm text-gray-600 mb-2"><b>DOMDig</b> adalah pemindai DOM XSS berbasis <i>headless Chromium</i> yang dirancang khusus untuk mendeteksi eksekusi pada sink JavaScript termasuk <code>eval()</code> dan manipulasi <code>location.hash</code>.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <b>Terminal</b> Kali Linux, kloning repositori DOMDig dari GitHub, dan masuk ke direktorinya:
+        <pre><code class="language-bash">git clone https://github.com/fcavallarin/domdig.git
+cd domdig
+npm install</code></pre>
+    </li>
+    <li>Jalankan pemindaian terhadap <i>endpoint</i> lab lokal Anda:
+        <pre><code class="language-bash">node domdig.js "http://127.0.0.1:5000/lab/dom-based/practitioner/theme"</code></pre>
+    </li>
+    <li>DOMDig akan menyuntikkan berbagai kombinasi <i>breakout payload</i> ke dalam parameter URL maupun <code>#hash</code> secara otomatis menggunakan Chromium di latar belakang, lalu mencetak URL lengkap yang berhasil memicu eksekusi JavaScript di layar terminal.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Opsi B: Analisis Statis &amp; Deteksi Sink dengan XSStrike (<code>s0md3v/XSStrike</code>)</h4>
+<p class="text-sm text-gray-600 mb-2">Anda juga dapat menggunakan <b>XSStrike</b> untuk memindai kode sumber klien halaman dan mengidentifikasi pasangan <i>Source-Sink</i> secara cepat.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Masuk ke folder <b>XSStrike</b> yang telah dikloning dari GitHub (atau kloning ulang jika belum ada):
+        <pre><code class="language-bash">git clone https://github.com/s0md3v/XSStrike.git
+cd XSStrike
+python3 xsstrike.py -u "http://127.0.0.1:5000/lab/dom-based/practitioner/theme"</code></pre>
+    </li>
+    <li>Perhatikan bagian laporan <b>DOM vulnerabilities</b> di terminal. XSStrike akan menandai baris kode yang menggunakan <code>location.hash</code> sebagai <i>Source</i> dan <code>eval(</code> sebagai <i>Sink</i> berbahaya, sehingga Anda dapat langsung menyusun <i>string breakout</i> <code>'; alert(document.domain); //</code> dan mengujinya pada browser kedua.</li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">6. Panduan Mitigasi (Secure Coding)</h3>
+<p class="mb-2">Jangan pernah menggunakan <code>eval()</code>, <code>setTimeout(string)</code>, atau <code>new Function()</code> untuk memproses data dari URL maupun input pengguna. Ganti penggunaan <code>eval()</code> dengan validasi berbasis <b>daftar putih (Allowlist)</b>:</p>
+<pre><code class="language-javascript">// AMAN: Tidak menggunakan eval() dan membatasi nilai hanya pada tema yang diizinkan
+const allowedThemes = ['light', 'dark', 'blue'];
+var hash = decodeURIComponent(window.location.hash.substring(1));
+
+if (allowedThemes.includes(hash)) {
+    document.body.setAttribute('data-theme', hash);
+}</code></pre>
+"""
         },
-        "expert": {
+"expert": {
             "title": "DOM-Based Open Redirection",
             "video_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-            "goal": "Eksploitasi fitur pengalihan URL dinamis untuk mengeksekusi JavaScript melalui pseudo-protocol <code>javascript:</code>.",
+            "goal": "Eksploitasi fitur pengalihan URL dinamis (Open Redirection) untuk mengeksekusi JavaScript melalui pseudo-protocol <code>javascript:</code> serta mengujinya lintas browser pada server lokal yang sama.",
             "tutorial": """
-<h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Apa itu DOM Open Redirection?</h3>
-<p>DOM-Based Open Redirection terjadi ketika skrip membaca URL yang disediakan oleh penyerang (dari <i>source</i>) dan menggunakannya untuk mengubah lokasi halaman (<i>sink</i> seperti <code>window.location</code> atau atribut <code>href</code> pada elemen <code>&lt;a&gt;</code>).</p>
-<p>Meskipun tujuan utamanya biasanya adalah <i>phishing</i> (mengarahkan korban ke situs palsu), ini juga bisa di eskalasi menjadi DOM XSS jika kita menggunakan pseudo-protokol.</p>
+<h3 class="text-xl font-bold text-navy-900 mt-6 mb-3">1. Teori Dasar &amp; Eskalasi DOM Open Redirection ke XSS</h3>
+<p class="mb-3"><b>DOM-Based Open Redirection</b> terjadi ketika skrip JavaScript sisi klien membaca URL yang dikendalikan oleh pengguna dari sebuah <b>Source</b> (seperti parameter kueri URL) dan meneruskannya secara langsung ke <b>Sink</b> navigasi (seperti <code>window.location</code> atau atribut <code>href</code> pada tag <code>&lt;a&gt;</code>) tanpa validasi domain maupun skema protokol.</p>
+<p class="mb-3">Pada skenario standar, kerentanan ini dimanfaatkan untuk serangan <i>phishing</i> dengan mengarahkan korban dari situs tepercaya ke domain berbahaya milik penyerang. Namun, apabila aplikasi tidak memvalidasi skema protokol (seperti mewajibkan <code>http://</code> atau <code>https://</code>), kerentanan ini dapat dieskalasi menjadi <b>DOM-Based XSS</b> menggunakan <i>pseudo-protocol</i> <code>javascript:</code>.</p>
+<p>Ketika atribut <code>href</code> pada tautan diisi dengan <code>javascript:kode_js</code> dan diklik oleh korban, browser tidak akan berpindah halaman melainkan mengeksekusi kode JavaScript tersebut langsung di dalam konteks sesi aplikasi target.</p>
 
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Analisis Kode</h3>
-<p>Halaman ini memiliki fitur "Kembali ke Belanja" yang membaca parameter URL <code>?returnUrl=...</code>.</p>
-<pre>var returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">2. Analisis Source Code (Source &amp; Sink)</h3>
+<ol class="list-decimal ml-6 space-y-2 mb-4">
+    <li>Buka halaman lab di browser Anda (sesuaikan <i>endpoint</i> dengan rute Flask Anda, misalnya):<br>
+        <code>http://127.0.0.1:5000/lab/dom-based/expert/redirect?returnUrl=/</code>
+    </li>
+    <li>Tekan <code>F12</code> (atau klik kanan pada tombol <b>"Kembali ke Belanja"</b> &gt; <b>Inspect</b>) untuk membuka <b>Developer Tools</b> dan periksa kode JavaScript yang berjalan:
+        <pre><code class="language-javascript">var returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
 if (returnUrl) {
     document.getElementById('back-link').setAttribute('href', returnUrl);
-}</pre>
-<p>Skrip secara dinamis menetapkan atribut <code>href</code> dari tag <code>&lt;a&gt;</code> berdasarkan input kita.</p>
-
-<h3 class="text-xl font-bold text-navy-900 mt-8 mb-3">3. Langkah Eksploitasi</h3>
-<ol class="list-decimal pl-5 space-y-2 mb-4">
-<li>Buka halaman lab. Anda mungkin melihat parameter <code>?returnUrl=/</code> di Address Bar Anda.</li>
-<li>Jika Anda mengubahnya menjadi <code>?returnUrl=https://google.com</code>, tombol tersebut akan mengarah ke Google (ini adalah Open Redirection standar).</li>
-<li>Untuk mengeskalasinya menjadi XSS, ubah parameter tersebut menggunakan pseudo-protocol JavaScript:</li>
-<li>Ganti URL menjadi: <code>?returnUrl=javascript:alert(document.cookie)</code></li>
-<li>Klik tombol "Kembali ke Belanja". Bukannya berpindah halaman, browser justru akan mengeksekusi skrip Anda!</li>
+}</code></pre>
+    </li>
+    <li><b>Identifikasi Aliran Data:</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li><b>Source:</b> <code>window.location.search</code> — Mengekstrak nilai parameter <code>returnUrl</code> dari bilah alamat URL.</li>
+            <li><b>Sink:</b> <code>document.getElementById('back-link').setAttribute('href', returnUrl)</code> — Menyisipkan string mentah langsung ke atribut <code>href</code> elemen tautan (<code>&lt;a id="back-link"&gt;</code>) tanpa memeriksa protokolnya.</li>
+        </ul>
+    </li>
 </ol>
-            """
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">3. Metode 1: Eksploitasi Manual &amp; Simulasi Lintas Browser (Tanpa Hosting)</h3>
+<p class="mb-4">Karena <i>payload</i> berada sepenuhnya di dalam parameter URL pada server lokal aplikasi (<code>127.0.0.1:5000</code>), Anda tidak membutuhkan server <i>hosting</i> terpisah untuk melancarkan serangan ke browser lain.</p>
+<ol class="list-decimal ml-6 space-y-3 mb-8">
+    <li><b>Uji Perilaku Normal:</b> Akses halaman dengan parameter standar <code>?returnUrl=/</code>. Arahkan kursor ke tombol <b>"Kembali ke Belanja"</b>, di pojok kiri bawah browser akan terlihat tujuan tautan mengarah ke <code>http://127.0.0.1:5000/</code>.</li>
+    <li><b>Konfirmasi Celah Open Redirection:</b> Ubah parameter URL menjadi domain eksternal:<br>
+        <code>http://127.0.0.1:5000/lab/dom-based/expert/redirect?returnUrl=https://example.com</code><br>
+        Klik tombol <b>"Kembali ke Belanja"</b>. Jika browser dialihkan ke <code>example.com</code>, artinya atribut <code>href</code> dapat dikendalikan penuh dari URL.
+    </li>
+    <li><b>Eskalasi ke DOM XSS dengan Pseudo-Protocol:</b> Ganti nilai parameter <code>returnUrl</code> menggunakan skema <code>javascript:</code> untuk memanggil fungsi <code>alert()</code>:
+        <pre><code class="language-javascript">javascript:alert(document.domain)</code></pre>
+    </li>
+    <li><b>Bentuk URL Eksploitasi Final (URL-Encoded):</b> Ubah karakter titik dua (<code>:</code>) menjadi <code>%3A</code> agar tautan tetap utuh saat disalin antar aplikasi:
+        <pre><code>http://127.0.0.1:5000/lab/dom-based/expert/redirect?returnUrl=javascript%3Aalert(document.domain)</code></pre>
+    </li>
+    <li><b>Verifikasi pada Browser Lain (Simulasi Korban):</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>Salin (<i>Copy</i>) seluruh URL final pada langkah ke-4.</li>
+            <li>Buka aplikasi browser kedua yang berbeda di mesin Anda (misalnya jika Anda merakit eksploitasi di <b>Firefox</b>, sekarang buka <b>Google Chrome</b>, <b>Chromium</b>, atau jendela <b>Incognito/Private</b>).</li>
+            <li>Pastikan server Flask lokal tetap berjalan pada <code>127.0.0.1:5000</code>, tempelkan (<i>Paste</i>) tautan tersebut ke bilah alamat browser kedua, lalu tekan <code>Enter</code>.</li>
+            <li>Klik tombol <b>"Kembali ke Belanja"</b> pada halaman tersebut. Browser korban tidak akan berpindah halaman, melainkan langsung memunculkan pop-up <code>alert</code> berisi <code>127.0.0.1</code> tanpa memerlukan infrastruktur <i>hosting</i> tambahan.</li>
+        </ul>
+    </li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">4. Metode 2: Pelacakan Sink Atribut href dengan Burp Suite (DOM Invader)</h3>
+<p class="mb-4"><b>DOM Invader</b> pada Burp Suite mampu mendeteksi aliran data dari parameter URL menuju atribut berbahaya seperti <code>a.href</code> secara otomatis tanpa perlu membaca kode sumber secara manual.</p>
+<ol class="list-decimal ml-6 space-y-3 mb-8">
+    <li>Buka <b>Burp Suite</b> di Kali Linux, masuk ke tab <b>Proxy</b> &gt; <b>Intercept</b>, lalu klik <b>Open Browser</b>.</li>
+    <li>Klik ikon ekstensi (<i>puzzle</i>) di pojok kanan atas Burp Browser, pilih <b>DOM Invader</b>, nyalakan sakelar <b>DOM Invader is on</b>, lalu klik <b>Reload</b>.</li>
+    <li>Akses halaman lab dengan menyisipkan nilai pelacak (<i>canary</i>) unik pada parameter <code>returnUrl</code>:<br>
+        <code>http://127.0.0.1:5000/lab/dom-based/expert/redirect?returnUrl=ifseccanary77</code>
+    </li>
+    <li>Tekan <code>F12</code> untuk membuka <b>Developer Tools</b>, lalu pilih tab <b>DOM Invader</b>.</li>
+    <li><b>Analisis Temuan:</b>
+        <ul class="list-disc ml-6 mt-1 space-y-1">
+            <li>DOM Invader akan menyoroti temuan dengan status kritis: <b>Source: <code>location.search</code></b> mengalir langsung ke <b>Sink: <code>anchor.href</code></b> (atau <code>element.setAttribute:href</code>).</li>
+            <li>Klik tombol <b>Stack trace</b> untuk melihat baris kode tepat saat <code>setAttribute('href', returnUrl)</code> dieksekusi.</li>
+        </ul>
+    </li>
+    <li>Ubah nilai <code>ifseccanary77</code> di bilah alamat Burp Browser menjadi <code>javascript:alert(document.domain)</code> lalu tekan <code>Enter</code>. Klik tombol <b>"Kembali ke Belanja"</b> untuk memverifikasi pop-up <i>alert</i>, kemudian salin tautan tersebut dan buka di browser kedua untuk menguji keberhasilan lintas browser.</li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">5. Metode 3: Pemindaian Otomatis via Repositori GitHub di Kali Linux</h3>
+<p class="mb-4">Gunakan perangkat audit berbasis <i>headless browser</i> dan pemindai DOM dari GitHub di Kali Linux untuk menemukan celah injeksi atribut <code>href</code> secara otomatis.</p>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Opsi A: Menggunakan DOMDig (<code>fcavallarin/domdig</code>)</h4>
+<p class="text-sm text-gray-600 mb-2"><b>DOMDig</b> menjalankan Chromium secara <i>headless</i> untuk menguji berbagai vektor XSS, termasuk injeksi skema <code>javascript:</code> pada atribut tautan dan mengklik elemen secara otomatis untuk memverifikasi eksekusi.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <b>Terminal</b> Kali Linux, kloning repositori DOMDig dari GitHub, dan pasang dependensinya:
+        <pre><code class="language-bash">git clone https://github.com/fcavallarin/domdig.git
+cd domdig
+npm install</code></pre>
+    </li>
+    <li>Jalankan pemindaian pada URL lab lokal Anda:
+        <pre><code class="language-bash">node domdig.js "http://127.0.0.1:5000/lab/dom-based/expert/redirect?returnUrl=/"</code></pre>
+    </li>
+    <li>DOMDig akan menyuntikkan vektor <code>javascript:</code> ke parameter <code>returnUrl</code> dan mensimulasikan klik pada elemen <code>&lt;a&gt;</code> di halaman. Saat eksekusi terdeteksi, terminal akan mencetak URL lengkap beserta <i>payload</i> yang berhasil dieksekusi. Salin URL tersebut dan buka pada browser kedua untuk memvalidasinya secara visual.</li>
+</ol>
+
+<h4 class="text-lg font-bold text-navy-900 mt-6 mb-2">Opsi B: Menggunakan Dalfox (<code>hahwul/dalfox</code>) &amp; XSStrike (<code>s0md3v/XSStrike</code>)</h4>
+<p class="text-sm text-gray-600 mb-2">Anda juga dapat mengombinasikan <b>Dalfox</b> atau <b>XSStrike</b> untuk mengaudit parameter kueri <code>returnUrl</code> secara terarah.</p>
+<ol class="list-decimal ml-6 space-y-2 mb-8">
+    <li>Buka <b>Terminal</b> Kali Linux dan jalankan <b>Dalfox</b> dengan menargetkan parameter <code>returnUrl</code> secara spesifik:
+        <pre><code class="language-bash"># Instalasi jika belum tersedia:
+# git clone https://github.com/hahwul/dalfox.git &amp;&amp; cd dalfox &amp;&amp; go install
+
+dalfox url "http://127.0.0.1:5000/lab/dom-based/expert/redirect?returnUrl=test" -p returnUrl</code></pre>
+    </li>
+    <li>Alternatifnya, gunakan <b>XSStrike</b> untuk mendeteksi refleksi parameter URL pada atribut HTML:
+        <pre><code class="language-bash">git clone https://github.com/s0md3v/XSStrike.git
+cd XSStrike
+python3 xsstrike.py -u "http://127.0.0.1:5000/lab/dom-based/expert/redirect?returnUrl=test"</code></pre>
+    </li>
+    <li>Perangkat akan melaporkan bahwa input pada parameter <code>returnUrl</code> direfleksikan langsung ke dalam konteks atribut <code>href</code>. Susun URL dengan <code>?returnUrl=javascript%3Aalert(document.domain)</code> dan uji langsung di browser lain pada mesin lokal Anda.</li>
+</ol>
+
+<h3 class="text-xl font-bold text-navy-900 mt-10 mb-3">6. Panduan Mitigasi (Secure Coding)</h3>
+<p class="mb-2">Untuk mencegah baik <b>DOM Open Redirection</b> maupun eskalasi <b>DOM XSS</b> via <code>javascript:</code>, validasi URL menggunakan objek konstruktor <code>URL()</code> bawaan JavaScript. Pastikan protokol yang digunakan hanya <code>http:</code> atau <code>https:</code>, serta pastikan tujuan pengalihan berada pada domain (<code>origin</code>) yang sama:</p>
+<pre><code class="language-javascript">// AMAN: Memvalidasi skema protokol dan membatasi pengalihan hanya ke domain internal
+var returnUrl = new URLSearchParams(window.location.search).get('returnUrl');
+if (returnUrl) {
+    try {
+        const parsedUrl = new URL(returnUrl, window.location.origin);
+        if ((parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') &amp;&amp;
+            parsedUrl.origin === window.location.origin) {
+            document.getElementById('back-link').setAttribute('href', parsedUrl.href);
+        }
+    } catch (e) {
+        console.error("URL pengalihan tidak valid");
+    }
+}</code></pre>
+"""
         }
     },
     "cors": {
